@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Registration - Vithaigal Iyakkam</title>
+  
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/logo.svg') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body class="admin-login-body">
+
+  <div class="login-card" style="max-width: 480px;">
+    <!-- Language Switcher in Register Card -->
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+      <div class="admin-lang-switch">
+        <a href="{{ url_for('admin.set_language', lang='ta') }}" class="admin-lang-pill {% if current_lang == 'ta' %}active{% endif %}" title="தமிழுக்கு மாறுக">தமிழ்</a>
+        <a href="{{ url_for('admin.set_language', lang='en') }}" class="admin-lang-pill {% if current_lang != 'ta' %}active{% endif %}" title="Switch to English">English</a>
+      </div>
+    </div>
+
+    <div class="login-header">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Vithaigal Iyakkam" style="width: 80px; height: 80px; border-radius: 50%; box-shadow: 0 4px 14px rgba(0,0,0,0.15); margin-bottom: 12px;">
+      <h2>{% if current_lang == 'ta' %}நிர்வாகி கணக்கு உருவாக்குக{% else %}Create Admin Account{% endif %}</h2>
+      <p>{% if current_lang == 'ta' %}செய்தி மற்றும் உள்ளடக்கங்களை நிர்வகிக்க உங்கள் கணக்கை பதிவு செய்க{% else %}Register your administrator credentials to manage news & content{% endif %}</p>
+    </div>
+
+    <!-- Flash Alerts -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert-box alert-{{ category }}" style="margin-bottom: 20px; font-size: 13px;">
+            <span>{{ message }}</span>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form action="{{ url_for('auth.register') }}" method="POST" id="register-form">
+      <!-- Full Name -->
+      <div class="form-group-admin">
+        <label for="full_name">
+          <i class="fas fa-id-card" style="color: var(--admin-accent); margin-right: 4px;"></i> Full Name / பெயர் *
+        </label>
+        <input type="text" name="full_name" id="full_name" class="admin-input" required autofocus 
+               placeholder="e.g. Arun Kumar / ஆசிரியர்" 
+               value="{{ form_data.full_name if form_data else '' }}">
+      </div>
+
+      <!-- Username & Email Grid -->
+      <div class="form-grid-2" style="margin-bottom: 0;">
+        <div class="form-group-admin">
+          <label for="username">
+            <i class="fas fa-user" style="color: var(--admin-accent); margin-right: 4px;"></i> Username *
+          </label>
+          <input type="text" name="username" id="username" class="admin-input" required 
+                 placeholder="e.g. arun" 
+                 value="{{ form_data.username if form_data else '' }}">
+          <div class="help-text">Min 3 characters, no spaces</div>
+        </div>
+
+        <div class="form-group-admin">
+          <label for="email">
+            <i class="fas fa-envelope" style="color: var(--admin-accent); margin-right: 4px;"></i> Email *
+          </label>
+          <input type="email" name="email" id="email" class="admin-input" required 
+                 placeholder="e.g. arun@mail.com" 
+                 value="{{ form_data.email if form_data else '' }}">
+          <div class="help-text">Valid email address</div>
+        </div>
+      </div>
+
+      <!-- Password & Confirm Password Grid -->
+      <div class="form-grid-2" style="margin-bottom: 8px;">
+        <div class="form-group-admin">
+          <label for="password">
+            <i class="fas fa-lock" style="color: var(--admin-accent); margin-right: 4px;"></i> Password *
+          </label>
+          <div style="position: relative; display: flex; align-items: center;">
+            <input type="password" name="password" id="password" class="admin-input" required 
+                   placeholder="Min 6 chars" style="padding-right: 36px;">
+            <button type="button" id="toggle-pw-btn" style="position: absolute; right: 8px; background: transparent; border: none; color: var(--admin-text-muted); cursor: pointer; padding: 4px;" title="Show/Hide Password">
+              <i class="fas fa-eye" id="toggle-pw-icon"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group-admin">
+          <label for="confirm_password">
+            <i class="fas fa-check-double" style="color: var(--admin-accent); margin-right: 4px;"></i> Confirm *
+          </label>
+          <input type="password" name="confirm_password" id="confirm_password" class="admin-input" required 
+                 placeholder="Repeat password">
+        </div>
+      </div>
+
+      <div id="pw-match-warning" style="display: none; color: #ef4444; font-size: 12px; margin-bottom: 14px; text-align: center;">
+        Passwords do not match! / கடவுச்சொற்கள் பொருந்தவில்லை!
+      </div>
+
+      <button type="submit" class="admin-btn admin-btn-primary" style="width: 100%; justify-content: center; padding: 12px; margin-top: 10px;">
+        <i class="fas fa-user-plus"></i> {% if current_lang == 'ta' %}நிர்வாக கணக்கு உருவாக்குக{% else %}Create Admin Account & Sign In{% endif %}
+      </button>
+    </form>
+
+    <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--admin-border); text-align: center; font-size: 12.5px; color: var(--admin-text-muted);">
+      <p style="margin-bottom: 10px;">
+        {% if current_lang == 'ta' %}
+        ஏற்கனவே பதிவு செய்துள்ளீர்களா? 
+        <a href="{{ url_for('auth.login') }}" style="color: var(--admin-accent); font-weight: 700; text-decoration: none;">
+          உள்நுழைக &rarr;
+        </a>
+        {% else %}
+        Already registered? 
+        <a href="{{ url_for('auth.login') }}" style="color: var(--admin-accent); font-weight: 700; text-decoration: none;">
+          Sign in here &rarr;
+        </a>
+        {% endif %}
+      </p>
+      <a href="{{ url_for('public.index') }}" style="color: var(--admin-text-muted); font-size: 12px; display: inline-flex; align-items: center; gap: 4px; text-decoration: none;">
+        <i class="fas fa-arrow-left"></i> {% if current_lang == 'ta' %}பொது தளத்திற்கு திரும்புக{% else %}Return to Public Website{% endif %}
+      </a>
+    </div>
+  </div>
+
+  <script>
+    const pwInput = document.getElementById('password');
+    const confirmInput = document.getElementById('confirm_password');
+    const warning = document.getElementById('pw-match-warning');
+    const toggleBtn = document.getElementById('toggle-pw-btn');
+    const toggleIcon = document.getElementById('toggle-pw-icon');
+
+    if (toggleBtn && pwInput && toggleIcon) {
+      toggleBtn.addEventListener('click', () => {
+        if (pwInput.type === 'password') {
+          pwInput.type = 'text';
+          toggleIcon.className = 'fas fa-eye-slash';
+        } else {
+          pwInput.type = 'password';
+          toggleIcon.className = 'fas fa-eye';
+        }
+      });
+    }
+
+    function checkMatch() {
+      if (confirmInput.value && pwInput.value !== confirmInput.value) {
+        warning.style.display = 'block';
+      } else {
+        warning.style.display = 'none';
+      }
+    }
+
+    pwInput.addEventListener('input', checkMatch);
+    confirmInput.addEventListener('input', checkMatch);
+  </script>
+
+</body>
+</html>
+

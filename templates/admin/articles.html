@@ -1,0 +1,283 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}All Articles{% endblock %}
+{% block page_title %}All Articles{% endblock %}
+
+{% block admin_content %}
+
+<!-- ======================================================================
+     1. ARTICLES HEADER BAR (Title, Subtitle & Primary CTA)
+     ====================================================================== -->
+<div class="articles-header-bar">
+  <div>
+    <h2 class="section-title">
+      <i class="fas fa-newspaper" style="color: var(--accent-orange);"></i> All Articles
+      <span class="tab-badge" style="background: rgba(255, 87, 34, 0.12); color: var(--accent-orange); font-size: 13px;">{{ pagination.total }}</span>
+    </h2>
+    <p class="section-subtitle">Manage, edit, publish, schedule and monitor bilingual news articles across all desks.</p>
+  </div>
+
+  <div style="display: flex; gap: 10px; align-items: center;">
+    <a href="{{ url_for('admin.categories') }}" class="admin-btn admin-btn-outline" title="Manage Categories">
+      <i class="fas fa-folder-open"></i> News Desks
+    </a>
+    <a href="{{ url_for('admin.add_article') }}" class="admin-btn admin-btn-primary">
+      <i class="fas fa-plus"></i> Write New Article
+    </a>
+  </div>
+</div>
+
+<!-- ======================================================================
+     2. QUICK STATUS TABS (All, Published, Drafts, Scheduled)
+     ====================================================================== -->
+<div class="article-status-tabs">
+  <a href="{{ url_for('admin.articles', q=search_query, category_id=selected_category) }}" 
+     class="status-tab-item {% if not selected_status %}active{% endif %}">
+    <i class="fas fa-layer-group"></i> All Articles
+    <span class="tab-badge">{{ total_articles }}</span>
+  </a>
+
+  <a href="{{ url_for('admin.articles', status='published', q=search_query, category_id=selected_category) }}" 
+     class="status-tab-item {% if selected_status == 'published' %}active{% endif %}">
+    <i class="fas fa-check-circle" style="color: #10b981;"></i> Published
+    <span class="tab-badge">{{ published_count }}</span>
+  </a>
+
+  <a href="{{ url_for('admin.articles', status='draft', q=search_query, category_id=selected_category) }}" 
+     class="status-tab-item {% if selected_status == 'draft' %}active{% endif %}">
+    <i class="fas fa-pencil-ruler" style="color: #f59e0b;"></i> Drafts
+    <span class="tab-badge">{{ draft_count }}</span>
+  </a>
+
+  <a href="{{ url_for('admin.articles', status='scheduled', q=search_query, category_id=selected_category) }}" 
+     class="status-tab-item {% if selected_status == 'scheduled' %}active{% endif %}">
+    <i class="fas fa-calendar-alt" style="color: #0ea5e9;"></i> Scheduled
+    <span class="tab-badge">{{ scheduled_count }}</span>
+  </a>
+</div>
+
+<!-- ======================================================================
+     3. TABLE CARD & TOOLBAR (Search, Category Filter & Actions)
+     ====================================================================== -->
+<div class="card-table-wrap">
+  <!-- Clean Aligned Toolbar -->
+  <div class="articles-toolbar">
+    <form action="{{ url_for('admin.articles') }}" method="GET" class="articles-filter-form">
+      {% if selected_status %}
+      <input type="hidden" name="status" value="{{ selected_status }}">
+      {% endif %}
+
+      <!-- Search Input with Magnifier Icon -->
+      <div class="search-input-wrap">
+        <i class="fas fa-search"></i>
+        <input type="text" name="q" value="{{ search_query }}" 
+               placeholder="Search title, Tamil headline, author..." 
+               class="admin-input table-search-input">
+      </div>
+
+      <!-- Category Filter Dropdown -->
+      <select name="category_id" class="admin-select toolbar-select" onchange="this.form.submit()">
+        <option value="">All Categories</option>
+        {% for c in categories %}
+        <option value="{{ c.id }}" {% if selected_category == c.id %}selected{% endif %}>
+          {{ c.name_en }} ({{ c.name_ta }})
+        </option>
+        {% endfor %}
+      </select>
+
+      <!-- Status Filter Dropdown (Optional fallback) -->
+      <select name="status" class="admin-select toolbar-select" onchange="this.form.submit()">
+        <option value="" {% if not selected_status %}selected{% endif %}>All Statuses</option>
+        <option value="published" {% if selected_status == 'published' %}selected{% endif %}>Published</option>
+        <option value="draft" {% if selected_status == 'draft' %}selected{% endif %}>Draft</option>
+        <option value="scheduled" {% if selected_status == 'scheduled' %}selected{% endif %}>Scheduled</option>
+      </select>
+
+      <button type="submit" class="admin-btn admin-btn-secondary toolbar-btn">
+        <i class="fas fa-filter"></i> Filter
+      </button>
+
+      {% if search_query or selected_category or selected_status %}
+      <a href="{{ url_for('admin.articles') }}" class="admin-btn admin-btn-outline toolbar-btn" title="Reset all filters">
+        <i class="fas fa-times"></i> Reset
+      </a>
+      {% endif %}
+    </form>
+
+    <div style="font-size: 12.5px; color: var(--admin-text-muted); white-space: nowrap;">
+      Showing <strong>{{ articles|length }}</strong> of <strong>{{ pagination.total }}</strong>
+    </div>
+  </div>
+
+  <!-- Responsive Table with Explicit Column Widths -->
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th style="width: 70px; text-align: center;">Thumb</th>
+        <th style="min-width: 280px;">Title & Headlines</th>
+        <th style="width: 140px;">Category</th>
+        <th style="width: 130px;">Author</th>
+        <th style="width: 110px; text-align: center;">Status</th>
+        <th style="width: 80px; text-align: center;">Views</th>
+        <th style="width: 80px; text-align: center;">Featured</th>
+        <th style="width: 110px; text-align: center;">Published</th>
+        <th style="width: 120px; text-align: right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in articles %}
+      <tr>
+        <!-- Thumbnail -->
+        <td style="text-align: center;">
+          <img src="{{ a.featured_image or url_for('static', filename='images/placeholder.jpg') }}" 
+               alt="" 
+               class="table-thumb" 
+               style="margin: 0 auto;"
+               onerror="this.src='/static/images/placeholder.jpg'">
+        </td>
+
+        <!-- Title, Tamil Headline & SEO Slug -->
+        <td>
+          <a href="{{ url_for('public.article', slug=a.slug) }}" target="_blank" 
+             style="font-weight: 700; color: var(--admin-text-main); font-size: 14px; line-height: 1.35; display: block;">
+            {{ a.title }}
+          </a>
+          {% if a.title_ta %}
+          <div style="font-family: var(--font-tamil); font-size: 13px; color: var(--admin-text-muted); margin-top: 3px; line-height: 1.4;">
+            {{ a.title_ta }}
+          </div>
+          {% endif %}
+          <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+            <code class="slug-pill">/article/{{ a.slug }}</code>
+            <small style="color: var(--admin-text-muted); font-size: 11px;">&bull; {{ a.reading_time }} min read</small>
+          </div>
+        </td>
+
+        <!-- Category -->
+        <td>
+          <span class="category-badge-pill">
+            <i class="fas fa-folder" style="color: var(--accent-orange); font-size: 11px;"></i>
+            {{ a.category.name_en if a.category else 'General' }}
+          </span>
+        </td>
+
+        <!-- Author -->
+        <td>
+          <div style="display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; color: var(--admin-text-main);">
+            <i class="fas fa-user-edit" style="color: var(--admin-text-muted); font-size: 12px;"></i>
+            <span>{{ a.author }}</span>
+          </div>
+          {% if a.author_ta %}
+          <div style="font-family: var(--font-tamil); font-size: 11.5px; color: var(--admin-text-muted); padding-left: 18px;">
+            {{ a.author_ta }}
+          </div>
+          {% endif %}
+        </td>
+
+        <!-- Status Toggle Badge -->
+        <td style="text-align: center;">
+          <span class="status-badge {{ a.status }} toggle-article-status-btn" 
+                data-id="{{ a.id }}" 
+                title="Click to toggle status (Published / Draft)">
+            <i class="fas {% if a.status == 'published' %}fa-check-circle{% elif a.status == 'draft' %}fa-clock{% else %}fa-calendar{% endif %}" style="font-size: 10px;"></i>
+            {{ a.status }}
+          </span>
+        </td>
+
+        <!-- Views Count -->
+        <td style="text-align: center;">
+          <strong style="color: var(--admin-text-main); font-size: 13px;">{{ "{:,}".format(a.views) }}</strong>
+        </td>
+
+        <!-- Featured Indicator -->
+        <td style="text-align: center;">
+          {% if a.is_featured %}
+          <span class="featured-star-pill" title="Featured Headline on Homepage">
+            <i class="fas fa-star"></i>
+          </span>
+          {% else %}
+          <span style="color: var(--admin-text-muted); font-size: 14px;">&mdash;</span>
+          {% endif %}
+        </td>
+
+        <!-- Published Date -->
+        <td style="text-align: center; white-space: nowrap;">
+          <span style="font-size: 12.5px; color: var(--admin-text-secondary); font-weight: 500;">
+            {{ a.created_at.strftime('%b %d, %Y') }}
+          </span>
+        </td>
+
+        <!-- Action Buttons (Square, Centered, Right-aligned) -->
+        <td style="text-align: right;">
+          <div class="table-actions" style="justify-content: flex-end;">
+            <a href="{{ url_for('public.article', slug=a.slug) }}" target="_blank" 
+               class="table-action-btn view-btn" title="View live article on public website">
+              <i class="fas fa-external-link-alt"></i>
+            </a>
+            <a href="{{ url_for('admin.edit_article', id=a.id) }}" 
+               class="table-action-btn edit-btn" title="Edit article">
+              <i class="fas fa-edit"></i>
+            </a>
+            <button type="button" 
+                    class="table-action-btn delete-btn open-delete-modal-btn" 
+                    data-action-url="{{ url_for('admin.delete_article', id=a.id) }}" 
+                    data-item-name="{{ a.title }}" 
+                    title="Permanently delete article">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="9" style="text-align: center; padding: 50px 20px; color: var(--admin-text-muted);">
+          <div style="font-size: 38px; color: #cbd5e1; margin-bottom: 12px;">
+            <i class="fas fa-newspaper"></i>
+          </div>
+          <h4 style="font-size: 16px; font-weight: 700; color: var(--admin-text-main); margin-bottom: 6px;">
+            No articles found matching your criteria.
+          </h4>
+          <p style="font-size: 13px; margin-bottom: 18px;">
+            Try clearing filters or search keywords, or compose a new editorial publication.
+          </p>
+          <a href="{{ url_for('admin.add_article') }}" class="admin-btn admin-btn-primary">
+            <i class="fas fa-plus"></i> Compose New Article
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Pagination Footer -->
+  <div class="table-pagination-footer">
+    <span style="font-size: 13px; color: var(--admin-text-muted);">
+      Showing page <strong>{{ pagination.page }}</strong> of <strong>{{ pagination.pages or 1 }}</strong> &bull; Total <strong>{{ pagination.total }}</strong> articles
+    </span>
+
+    {% if pagination.pages > 1 %}
+    <div style="display: flex; gap: 6px; align-items: center;">
+      {% if pagination.has_prev %}
+      <a href="{{ url_for('admin.articles', page=pagination.prev_num, q=search_query, category_id=selected_category, status=selected_status) }}" 
+         class="admin-btn admin-btn-secondary admin-btn-sm">
+        <i class="fas fa-chevron-left"></i> Previous
+      </a>
+      {% endif %}
+
+      <span style="font-size: 12px; font-weight: 700; padding: 4px 10px; background: var(--admin-bg); border-radius: 4px; border: 1px solid var(--admin-border);">
+        {{ pagination.page }} / {{ pagination.pages }}
+      </span>
+
+      {% if pagination.has_next %}
+      <a href="{{ url_for('admin.articles', page=pagination.next_num, q=search_query, category_id=selected_category, status=selected_status) }}" 
+         class="admin-btn admin-btn-secondary admin-btn-sm">
+        Next <i class="fas fa-chevron-right"></i>
+      </a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+{% endblock %}

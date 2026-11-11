@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{% if current_lang == 'ta' %}தொடர்புக்கு{% else %}Contact Us{% endif %} - {{ settings.get('site_name_ta', 'விதை இயக்கம்') if current_lang == 'ta' else settings.get('site_name_en', 'Vithaigal Iyakkam') }}
+{% endblock %}
+
+{% block content %}
+
+<!-- Contact Hero Banner -->
+<div class="listing-hero-banner">
+  <div class="container">
+    <div class="listing-hero-inner">
+      <div>
+        <h1 class="listing-hero-title">
+          <i class="fas fa-envelope-open-text" style="color: var(--accent-orange); margin-right: 8px;"></i>
+          {% if current_lang == 'ta' %}எங்கள் ஆசிரியர் குழுவைத் தொடர்பு கொள்ளவும்{% else %}Get in Touch with Our Editorial Desk{% endif %}
+        </h1>
+        <p class="listing-hero-desc">
+          {% if current_lang == 'ta' %}
+            செய்தித் துணுக்குகள், ஆய்வுக் கட்டுரைகள், கீழடி தொல்லியல் தகவல்கள் அல்லது உங்கள் பின்னூட்டங்களை எங்களுக்கு அனுப்பலாம்.
+          {% else %}
+            Submit news tips, editorial inquiries, archaeological updates, or public feedback directly to our newsroom.
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="contact-layout">
+  <!-- Contact Form Card -->
+  <div class="contact-card">
+    <h2 style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+      <i class="fas fa-paper-plane" style="color: var(--accent-orange);"></i>
+      <span>{% if current_lang == 'ta' %}செய்தி அனுப்பவும்{% else %}Send a Message{% endif %}</span>
+    </h2>
+
+    <form action="{{ url_for('public.contact') }}" method="POST">
+      <div class="form-group">
+        <label class="form-label" for="name">
+          {% if current_lang == 'ta' %}உங்கள் பெயர் *{% else %}Full Name *{% endif %}
+        </label>
+        <input type="text" name="name" id="name" class="form-control" required placeholder="{% if current_lang == 'ta' %}எ.கா. மு. பாரதிதாசன்{% else %}e.g. John Doe{% endif %}">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="email">
+          {% if current_lang == 'ta' %}மின்னஞ்சல் முகவரி *{% else %}Email Address *{% endif %}
+        </label>
+        <input type="email" name="email" id="email" class="form-control" required placeholder="{% if current_lang == 'ta' %}எ.கா. yourname@domain.com{% else %}e.g. yourname@domain.com{% endif %}">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="subject">
+          {% if current_lang == 'ta' %}செய்தியின் பொருள் *{% else %}Subject / Topic *{% endif %}
+        </label>
+        <input type="text" name="subject" id="subject" class="form-control" required placeholder="{% if current_lang == 'ta' %}எ.கா. கீழடி ஆய்வு பற்றிய கேள்வி / கருத்து{% else %}e.g. Editorial feedback or news tip{% endif %}">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="message">
+          {% if current_lang == 'ta' %}விவரமான செய்தி *{% else %}Message Content *{% endif %}
+        </label>
+        <textarea name="message" id="message" class="form-control" rows="5" required placeholder="{% if current_lang == 'ta' %}உங்கள் செய்தியை இங்கே தட்டச்சு செய்யவும்...{% else %}Write your detailed inquiry here...{% endif %}"></textarea>
+      </div>
+
+      <button type="submit" class="btn-primary" style="width: 100%; justify-content: center;">
+        <i class="fas fa-paper-plane"></i>
+        <span>{% if current_lang == 'ta' %}செய்தியை உடனடியாக அனுப்பவும்{% else %}Submit Message to Desk{% endif %}</span>
+      </button>
+    </form>
+  </div>
+
+  <!-- Editorial Office Info Card -->
+  <div class="contact-card" style="background: var(--navy-900); color: #fff;">
+    <h2 style="font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+      {% if current_lang == 'ta' %}அலுவலக முகவரி & தகவல்{% else %}Editorial Headquarters{% endif %}
+    </h2>
+
+    <div class="contact-info-list">
+      <div class="contact-info-item">
+        <div class="contact-icon"><i class="fas fa-map-marker-alt"></i></div>
+        <div>
+          <strong style="display: block; font-size: 14px; color: #fff; margin-bottom: 4px;">
+            {% if current_lang == 'ta' %}முதன்மை அலுவலகம்{% else %}Head Office{% endif %}
+          </strong>
+          <p style="font-size: 13px; color: #cbd5e1; line-height: 1.6;">
+            {{ settings.get('site_address_ta' if current_lang == 'ta' else 'site_address_en', 'அண்ணா சாலை, ஆயிரம் விளக்கு, சென்னை, தமிழ்நாடு - 600006') }}
+          </p>
+        </div>
+      </div>
+
+      <div class="contact-info-item">
+        <div class="contact-icon"><i class="fas fa-envelope"></i></div>
+        <div>
+          <strong style="display: block; font-size: 14px; color: #fff; margin-bottom: 4px;">
+            {% if current_lang == 'ta' %}மின்னஞ்சல் தொடர்புகள்{% else %}Email Desk{% endif %}
+          </strong>
+          <p style="font-size: 13px; color: #cbd5e1;">
+            {{ settings.get('site_email', 'contact@vithaigaliyakkam.org') }}
+          </p>
+        </div>
+      </div>
+
+      <div class="contact-info-item">
+        <div class="contact-icon"><i class="fas fa-phone-alt"></i></div>
+        <div>
+          <strong style="display: block; font-size: 14px; color: #fff; margin-bottom: 4px;">
+            {% if current_lang == 'ta' %}தொலைபேசி எண்{% else %}Direct Newsline{% endif %}
+          </strong>
+          <p style="font-size: 13px; color: #cbd5e1;">
+            {{ settings.get('site_phone', '+91 94430 12345') }}
+          </p>
+        </div>
+      </div>
+
+      <div class="contact-info-item">
+        <div class="contact-icon"><i class="fas fa-clock"></i></div>
+        <div>
+          <strong style="display: block; font-size: 14px; color: #fff; margin-bottom: 4px;">
+            {% if current_lang == 'ta' %}செயல்பாட்டு நேரம்{% else %}Working Hours{% endif %}
+          </strong>
+          <p style="font-size: 13px; color: #cbd5e1;">
+            {% if current_lang == 'ta' %}திங்கள் - சனி: காலை 8:00 - இரவு 9:00{% else %}Mon - Sat: 8:00 AM - 9:00 PM IST{% endif %}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Social Media Box -->
+    <div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+      <h3 style="font-size: 14px; color: #cbd5e1; margin-bottom: 12px;">{% if current_lang == 'ta' %}சமூக ஊடகங்களில் இணைந்திடுங்கள்:{% else %}Connect on Social Media:{% endif %}</h3>
+      <div class="social-icons-row">
+        {% if settings.get('social_facebook') %}<a href="{{ settings.get('social_facebook') }}" target="_blank" class="social-icon-circle"><i class="fab fa-facebook-f"></i></a>{% endif %}
+        {% if settings.get('social_twitter') %}<a href="{{ settings.get('social_twitter') }}" target="_blank" class="social-icon-circle"><i class="fab fa-x-twitter"></i></a>{% endif %}
+        {% if settings.get('social_youtube') %}<a href="{{ settings.get('social_youtube') }}" target="_blank" class="social-icon-circle"><i class="fab fa-youtube"></i></a>{% endif %}
+        {% if settings.get('social_whatsapp') %}<a href="{{ settings.get('social_whatsapp') }}" target="_blank" class="social-icon-circle"><i class="fab fa-whatsapp"></i></a>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+

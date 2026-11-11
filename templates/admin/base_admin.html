@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Dashboard{% endblock %} - Vithaigal Iyakkam Admin</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+  
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="admin-body">
+
+  <!-- Mobile Sidebar Backdrop Overlay -->
+  <div class="sidebar-backdrop-overlay" id="sidebar-backdrop-overlay"></div>
+
+  <!-- ======================================================================
+       ADMIN SIDEBAR (Deep Navy & Accent Orange Theme)
+       ====================================================================== -->
+  <aside class="admin-sidebar" id="admin-sidebar">
+    <div class="sidebar-brand">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Vithaigal Iyakkam" class="sidebar-logo">
+      <div class="sidebar-brand-text">
+        {% if current_lang == 'ta' %}விதைகள் இயக்கம்{% else %}Vithaigal Iyakkam{% endif %}
+      </div>
+      <button type="button" class="sidebar-close-btn" id="sidebar-close-btn">&times;</button>
+    </div>
+
+    <ul class="sidebar-menu">
+      <li class="menu-label">{% if current_lang == 'ta' %}முதன்மை பலகை{% else %}Main Dashboard{% endif %}</li>
+      <li class="menu-item {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+        <a href="{{ url_for('admin.dashboard') }}">
+          <i class="fas fa-chart-pie"></i>
+          <span>{% if current_lang == 'ta' %}கண்ணோட்டம் (Overview){% else %}Dashboard Overview{% endif %}</span>
+        </a>
+      </li>
+
+      <li class="menu-label">{% if current_lang == 'ta' %}செய்தி & உள்ளடக்கம்{% else %}Editorial Content{% endif %}</li>
+      <li class="menu-item {% if request.endpoint in ['admin.articles', 'admin.edit_article'] %}active{% endif %}">
+        <a href="{{ url_for('admin.articles') }}">
+          <i class="fas fa-newspaper"></i>
+          <span>{% if current_lang == 'ta' %}அனைத்து கட்டுரைகள்{% else %}All Articles{% endif %}</span>
+        </a>
+      </li>
+      <li class="menu-item {% if request.endpoint == 'admin.add_article' %}active{% endif %}">
+        <a href="{{ url_for('admin.add_article') }}">
+          <i class="fas fa-pen-nib"></i>
+          <span>{% if current_lang == 'ta' %}புதிய கட்டுரை எழுதுக{% else %}Write New Article{% endif %}</span>
+        </a>
+      </li>
+      <li class="menu-item {% if request.endpoint == 'admin.categories' %}active{% endif %}">
+        <a href="{{ url_for('admin.categories') }}">
+          <i class="fas fa-folder-open"></i>
+          <span>{% if current_lang == 'ta' %}செய்திப் பிரிவுகள்{% else %}News Categories{% endif %}</span>
+        </a>
+      </li>
+      <li class="menu-item {% if request.endpoint == 'admin.breaking_news' %}active{% endif %}">
+        <a href="{{ url_for('admin.breaking_news') }}">
+          <i class="fas fa-bolt"></i>
+          <span>{% if current_lang == 'ta' %}முக்கியச் செய்திகள் வரி{% else %}Breaking News Ticker{% endif %}</span>
+        </a>
+      </li>
+
+      <li class="menu-label">{% if current_lang == 'ta' %}வாசகர் & கருத்துகள்{% else %}Audience & Feedback{% endif %}</li>
+      <li class="menu-item {% if request.endpoint == 'admin.messages' %}active{% endif %}">
+        <a href="{{ url_for('admin.messages') }}">
+          <i class="fas fa-envelope"></i>
+          <span>{% if current_lang == 'ta' %}வாசகர் கருத்துகள்{% else %}Reader Messages{% endif %}</span>
+        </a>
+      </li>
+      <li class="menu-item {% if request.endpoint == 'admin.subscribers' %}active{% endif %}">
+        <a href="{{ url_for('admin.subscribers') }}">
+          <i class="fas fa-users"></i>
+          <span>{% if current_lang == 'ta' %}சந்தாதாரர் பட்டியல்{% else %}Subscribers List{% endif %}</span>
+        </a>
+      </li>
+
+      <li class="menu-label">{% if current_lang == 'ta' %}கட்டமைப்பு & அமைப்புகள்{% else %}Configuration{% endif %}</li>
+      <li class="menu-item {% if request.endpoint == 'admin.settings' %}active{% endif %}">
+        <a href="{{ url_for('admin.settings') }}">
+          <i class="fas fa-sliders-h"></i>
+          <span>{% if current_lang == 'ta' %}தள அமைப்புகள் & சுயவிவரம்{% else %}Settings & Profile{% endif %}</span>
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="{{ url_for('public.index') }}" target="_blank" class="live-portal-link">
+          <i class="fas fa-external-link-alt"></i>
+          <span>{% if current_lang == 'ta' %}நேரலை தளம் காண்க{% else %}Open Public Portal{% endif %}</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-user">
+        <div class="user-avatar-mini">{{ (session.get('full_name', 'Admin'))[:1] }}</div>
+        <div class="user-details-mini">
+          <strong>{{ session.get('username', 'Admin') }}</strong>
+          <small>{% if current_lang == 'ta' %}முதன்மை நிர்வாகி{% else %}{{ session.get('role', 'Super Admin')|title }}{% endif %}</small>
+        </div>
+      </div>
+      <a href="{{ url_for('auth.logout') }}" class="sidebar-logout-btn" title="{% if current_lang == 'ta' %}வெளியேறு{% else %}Sign Out{% endif %}">
+        <i class="fas fa-sign-out-alt"></i>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ======================================================================
+       MAIN CONTENT WRAPPER
+       ====================================================================== -->
+  <div class="admin-main-wrapper">
+    <!-- Admin Top Bar with Alignment & Interactivity -->
+    <header class="admin-topbar">
+      <div class="admin-topbar-left">
+        <!-- Mobile Sidebar Toggle Hamburger Button -->
+        <button type="button" class="sidebar-toggle-btn" id="sidebar-toggle-btn" aria-label="Toggle Sidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+        <div class="admin-breadcrumb-group">
+          <h1 class="admin-page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+          <span class="admin-breadcrumb-sub">{% if current_lang == 'ta' %}விதைகள் இயக்கம் டிஜிட்டல் செய்தித் தளம்{% else %}Vithaigal Iyakkam Digital Publishing Portal{% endif %}</span>
+        </div>
+      </div>
+
+      <div class="admin-topbar-right">
+        <!-- Bilingual Language Switcher (Tamil / English) -->
+        <div class="admin-lang-switch">
+          <a href="{{ url_for('admin.set_language', lang='ta') }}" 
+             class="admin-lang-pill {% if current_lang == 'ta' %}active{% endif %}" 
+             title="தமிழுக்கு மாறுக">
+            தமிழ்
+          </a>
+          <a href="{{ url_for('admin.set_language', lang='en') }}" 
+             class="admin-lang-pill {% if current_lang != 'ta' %}active{% endif %}" 
+             title="Switch to English">
+            English
+          </a>
+        </div>
+
+        <!-- Quick Action: Write Article -->
+        <a href="{{ url_for('admin.add_article') }}" class="admin-btn admin-btn-primary">
+          <i class="fas fa-plus"></i>
+          <span>{% if current_lang == 'ta' %}கட்டுரை எழுதுக{% else %}Write Article{% endif %}</span>
+        </a>
+
+        <!-- Quick Action: Open Public Site -->
+        <a href="{{ url_for('public.index') }}" target="_blank" class="admin-btn admin-btn-outline" title="View Public Website">
+          <i class="fas fa-globe"></i>
+          <span class="hide-mobile">{% if current_lang == 'ta' %}நேரலை தளம்{% else %}Live Portal{% endif %}</span>
+        </a>
+
+        <!-- Dark / Light Theme Toggle -->
+        <button type="button" class="admin-btn admin-btn-icon theme-toggle-btn" title="{% if current_lang == 'ta' %}வெளிச்சம் / இருள் பயன்முறை{% else %}Toggle Light / Dark Mode{% endif %}">
+          <i class="fas fa-moon"></i>
+        </button>
+
+        <!-- User Profile Pill -->
+        <div class="admin-user-pill">
+          <div class="user-avatar-circle">
+            {{ (session.get('full_name', 'Admin'))[:1] }}
+          </div>
+          <div class="user-info-text">
+            <span class="user-display-name">{{ session.get('full_name', 'Administrator') }}</span>
+            <span class="user-display-role">{% if current_lang == 'ta' %}நிர்வாகி{% else %}{{ session.get('role', 'Super Admin')|title }}{% endif %}</span>
+          </div>
+        </div>
+
+        <!-- Logout Button -->
+        <a href="{{ url_for('auth.logout') }}" class="admin-btn admin-btn-danger-outline admin-btn-icon" title="{% if current_lang == 'ta' %}வெளியேறு{% else %}Logout{% endif %}">
+          <i class="fas fa-sign-out-alt"></i>
+        </a>
+      </div>
+    </header>
+
+    <!-- Admin Content Area -->
+    <main class="admin-content">
+      <!-- Flash Alert Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert-box alert-{{ category }}">
+              <i class="fas fa-info-circle" style="font-size: 16px;"></i>
+              <span style="flex: 1;">{{ message }}</span>
+              <button type="button" onclick="this.parentElement.remove()" style="background: transparent; border: none; cursor: pointer; color: inherit; font-size: 18px;">&times;</button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      {% block admin_content %}{% endblock %}
+    </main>
+  </div>
+
+  <!-- Reusable Interactive Delete Confirmation Modal -->
+  <div class="admin-modal-backdrop" id="delete-confirm-modal">
+    <div class="admin-modal">
+      <div class="modal-icon-header">
+        <i class="fas fa-trash-alt"></i>
+      </div>
+      <h3 class="modal-title">Confirm Permanent Deletion</h3>
+      <p class="modal-desc">
+        Are you sure you want to delete <strong id="modal-item-name">this record</strong>? This database operation cannot be undone.
+      </p>
+      <form id="delete-form" method="POST">
+        <div class="modal-actions">
+          <button type="button" class="admin-btn admin-btn-secondary" id="modal-cancel-btn">Cancel</button>
+          <button type="submit" class="admin-btn admin-btn-danger">Yes, Delete Permanently</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container for Admin AJAX Actions -->
+  <div class="toast-container" id="admin-toast-container"></div>
+
+  <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>
+

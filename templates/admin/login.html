@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login - Vithaigal Iyakkam</title>
+  
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/logo.svg') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body class="admin-login-body">
+
+  <div class="login-card">
+    <!-- Language Switcher in Login Card -->
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+      <div class="admin-lang-switch">
+        <a href="{{ url_for('admin.set_language', lang='ta') }}" class="admin-lang-pill {% if current_lang == 'ta' %}active{% endif %}" title="தமிழுக்கு மாறுக">தமிழ்</a>
+        <a href="{{ url_for('admin.set_language', lang='en') }}" class="admin-lang-pill {% if current_lang != 'ta' %}active{% endif %}" title="Switch to English">English</a>
+      </div>
+    </div>
+
+    <div class="login-header">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Vithaigal Iyakkam" style="width: 80px; height: 80px; border-radius: 50%; box-shadow: 0 4px 14px rgba(0,0,0,0.15); margin-bottom: 12px;">
+      <h2>{% if current_lang == 'ta' %}நிர்வாகி உள்நுழைவு{% else %}Editorial Portal Login{% endif %}</h2>
+      <p>{% if current_lang == 'ta' %}கட்டுப்பாட்டகத்தை அணுக உங்கள் பயனர் விபரங்களை உள்ளிடவும்{% else %}Enter your credentials to access the editorial dashboard{% endif %}</p>
+    </div>
+
+    <!-- First-time Setup Callout (if no administrators registered yet) -->
+    {% if not has_users %}
+    <div style="background: rgba(255, 87, 34, 0.1); border: 1px solid rgba(255, 87, 34, 0.3); border-radius: var(--admin-radius-sm); padding: 14px 16px; margin-bottom: 22px; text-align: left; font-size: 13px;">
+      <strong style="color: var(--accent-orange); display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+        <i class="fas fa-sparkles"></i> {% if current_lang == 'ta' %}முதற்கட்ட அமைப்பு{% else %}Welcome / First-time Setup{% endif %}
+      </strong>
+      <p style="color: var(--admin-text-main); margin: 0 0 10px 0; font-size: 12.5px; line-height: 1.45;">
+        {% if current_lang == 'ta' %}
+        நிர்வாக கணக்கு எதுவும் பதிவு செய்யப்படவில்லை. தொடங்குவதற்கு உங்கள் நிர்வாக கணக்கை உருவாக்கவும்.
+        {% else %}
+        No administrator account exists yet. Create your administrator account to get started.
+        {% endif %}
+      </p>
+      <a href="{{ url_for('auth.register') }}" class="admin-btn admin-btn-primary admin-btn-sm" style="display: inline-flex; font-size: 12px; width: 100%; justify-content: center;">
+        <i class="fas fa-user-plus"></i> {% if current_lang == 'ta' %}நிர்வாக கணக்கை பதிவு செய்க{% else %}Register Admin Account Now{% endif %}
+      </a>
+    </div>
+    {% endif %}
+
+    <!-- Flash Alerts -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert-box alert-{{ category }}" style="margin-bottom: 20px; font-size: 13px;">
+            <span>{{ message }}</span>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form action="{{ url_for('auth.login', next=request.args.get('next')) }}" method="POST">
+      <div class="form-group-admin">
+        <label for="username">
+          <i class="fas fa-user" style="color: var(--admin-accent); margin-right: 4px;"></i> 
+          {% if current_lang == 'ta' %}பயனர் பெயர் அல்லது மின்னஞ்சல்{% else %}Username or Email{% endif %}
+        </label>
+        <input type="text" name="username" id="username" class="admin-input" required autofocus 
+               placeholder="{% if current_lang == 'ta' %}பயனர் பெயர் அல்லது மின்னஞ்சல் உள்ளிடவும்{% else %}Enter your username or email{% endif %}">
+      </div>
+
+      <div class="form-group-admin">
+        <label for="password">
+          <i class="fas fa-lock" style="color: var(--admin-accent); margin-right: 4px;"></i> 
+          {% if current_lang == 'ta' %}கடவுச்சொல்{% else %}Password{% endif %}
+        </label>
+        <div style="position: relative; display: flex; align-items: center;">
+          <input type="password" name="password" id="password" class="admin-input" required 
+                 placeholder="{% if current_lang == 'ta' %}உங்கள் கடவுச்சொல்லை உள்ளிடவும்{% else %}Enter your password{% endif %}" style="padding-right: 40px;">
+          <button type="button" id="toggle-pw-btn" style="position: absolute; right: 10px; background: transparent; border: none; color: var(--admin-text-muted); cursor: pointer; padding: 6px;" title="Show/Hide Password">
+            <i class="fas fa-eye" id="toggle-pw-icon"></i>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="admin-btn admin-btn-primary" style="width: 100%; justify-content: center; padding: 12px; margin-top: 10px;">
+        <i class="fas fa-sign-in-alt"></i> {% if current_lang == 'ta' %}உள்நுழைக{% else %}Sign In to Dashboard{% endif %}
+      </button>
+    </form>
+
+    <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--admin-border); text-align: center; font-size: 12.5px; color: var(--admin-text-muted);">
+      <p style="margin-bottom: 10px;">
+        {% if current_lang == 'ta' %}
+        புதிய நிர்வாகியா? 
+        <a href="{{ url_for('auth.register') }}" style="color: var(--admin-accent); font-weight: 700; text-decoration: none;">
+          கணக்கை பதிவு செய்க &rarr;
+        </a>
+        {% else %}
+        New administrator? 
+        <a href="{{ url_for('auth.register') }}" style="color: var(--admin-accent); font-weight: 700; text-decoration: none;">
+          Create Admin Account &rarr;
+        </a>
+        {% endif %}
+      </p>
+      <a href="{{ url_for('public.index') }}" style="color: var(--admin-text-muted); font-size: 12px; display: inline-flex; align-items: center; gap: 4px; text-decoration: none;">
+        <i class="fas fa-arrow-left"></i> {% if current_lang == 'ta' %}பொது தளத்திற்கு திரும்புக{% else %}Return to Public Website{% endif %}
+      </a>
+    </div>
+  </div>
+
+  <script>
+    const pwInput = document.getElementById('password');
+    const toggleBtn = document.getElementById('toggle-pw-btn');
+    const toggleIcon = document.getElementById('toggle-pw-icon');
+    if (toggleBtn && pwInput && toggleIcon) {
+      toggleBtn.addEventListener('click', () => {
+        if (pwInput.type === 'password') {
+          pwInput.type = 'text';
+          toggleIcon.className = 'fas fa-eye-slash';
+        } else {
+          pwInput.type = 'password';
+          toggleIcon.className = 'fas fa-eye';
+        }
+      });
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,287 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}News Categories{% endblock %}
+{% block page_title %}News Categories{% endblock %}
+
+{% block admin_content %}
+
+<!-- ======================================================================
+     1. HEADER ACTION BAR
+     ====================================================================== -->
+<div class="articles-header-bar">
+  <div>
+    <h2 class="section-title">
+      <i class="fas fa-folder-open" style="color: var(--accent-orange);"></i> News Categories
+      <span class="tab-badge" style="background: rgba(255, 87, 34, 0.12); color: var(--accent-orange); font-size: 13px;">
+        {{ categories|length }} Desks &bull; {{ total_articles or 0 }} Articles
+      </span>
+    </h2>
+    <p class="section-subtitle">
+      Organize editorial news coverage into distinct desks, manage bilingual Tamil/English titles, URL routing, and sort orders.
+    </p>
+  </div>
+
+  <div style="display: flex; gap: 10px; align-items: center;">
+    <a href="{{ url_for('admin.articles') }}" class="admin-btn admin-btn-outline" title="View all published articles">
+      <i class="fas fa-newspaper"></i> All Articles
+    </a>
+    <a href="{{ url_for('admin.add_article') }}" class="admin-btn admin-btn-primary">
+      <i class="fas fa-plus"></i> Write Article
+    </a>
+  </div>
+</div>
+
+<!-- ======================================================================
+     2. ASYMMETRIC 2-COLUMN LAYOUT (Sticky Form on Left, Wide Table on Right)
+     ====================================================================== -->
+<div class="categories-layout-grid">
+
+  <!-- ==================== LEFT: CREATE CATEGORY FORM ==================== -->
+  <div class="category-form-panel">
+    <h3 class="category-form-title">
+      <i class="fas fa-plus-circle" style="color: var(--accent-orange);"></i> Create New News Desk
+    </h3>
+
+    <form action="{{ url_for('admin.categories') }}" method="POST">
+      <!-- English Name -->
+      <div class="form-group-admin">
+        <label for="name_en">Desk Name (English) *</label>
+        <input type="text" name="name_en" id="name_en" class="admin-input" required placeholder="e.g. Science & Technology">
+      </div>
+
+      <!-- Tamil Name -->
+      <div class="form-group-admin">
+        <label for="name_ta">Desk Name (Tamil / தமிழ்) *</label>
+        <input type="text" name="name_ta" id="name_ta" class="admin-input" required placeholder="எ.கா. அறிவியல் & தொழில்நுட்பம்" style="font-family: var(--font-tamil);">
+      </div>
+
+      <!-- URL Slug -->
+      <div class="form-group-admin">
+        <label for="slug">URL Routing Slug</label>
+        <input type="text" name="slug" id="slug" class="admin-input" placeholder="e.g. science-tech (leave blank to auto-create)">
+        <div class="help-text">Live URL will be <code>/category/slug</code></div>
+      </div>
+
+      <!-- Icon & Sort Priority -->
+      <div class="form-grid-2" style="margin-bottom: 0;">
+        <div class="form-group-admin">
+          <label for="category-icon-input">Icon (FontAwesome)</label>
+          <div class="category-icon-input-group">
+            <input type="text" name="icon" id="category-icon-input" class="admin-input" value="newspaper" placeholder="e.g. landmark, film">
+            <div class="category-icon-preview-box" id="category-icon-preview" title="Live Icon Preview">
+              <i class="fas fa-newspaper"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group-admin">
+          <label for="order_index">Sort Order</label>
+          <input type="number" name="order_index" id="order_index" class="admin-input" value="{{ (categories|length) + 1 }}" min="1">
+        </div>
+      </div>
+
+      <!-- English Description -->
+      <div class="form-group-admin">
+        <label for="description_en">Coverage Scope (English)</label>
+        <textarea name="description_en" id="description_en" class="admin-textarea" style="min-height: 65px;" placeholder="Brief scope of news topics covered..."></textarea>
+      </div>
+
+      <!-- Tamil Description -->
+      <div class="form-group-admin">
+        <label for="description_ta">Coverage Scope (Tamil / தமிழ்)</label>
+        <textarea name="description_ta" id="description_ta" class="admin-textarea" style="min-height: 65px; font-family: var(--font-tamil);" placeholder="இப்பிரிவின் சுருக்கமான செய்தி எல்லை விளக்கம்..."></textarea>
+      </div>
+
+      <button type="submit" class="admin-btn admin-btn-primary" style="width: 100%; height: 42px; justify-content: center; margin-top: 6px;">
+        <i class="fas fa-check"></i> Create News Category
+      </button>
+    </form>
+  </div>
+
+  <!-- ==================== RIGHT: ACTIVE NEWS DESKS TABLE ==================== -->
+  <div class="card-table-wrap" style="margin-bottom: 0;">
+    <!-- Table Toolbar -->
+    <div class="table-header-toolbar">
+      <h3 style="font-size: 15px; font-weight: 700; color: var(--admin-text-main); display: flex; align-items: center; gap: 8px;">
+        <i class="fas fa-list-ol" style="color: var(--accent-orange);"></i> Active News Desks ({{ categories|length }})
+      </h3>
+
+      <!-- Quick Search Filter -->
+      <div style="position: relative; width: 220px;">
+        <input type="text" placeholder="Quick find desk..." class="table-search-input" style="width: 100%; height: 36px; padding: 6px 12px; font-size: 12.5px;">
+      </div>
+    </div>
+
+    <!-- Responsive Table -->
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th style="width: 60px; text-align: center;">Order</th>
+          <th style="min-width: 200px;">News Desk & Tamil Title</th>
+          <th style="width: 140px;">URL Slug</th>
+          <th style="width: 120px; text-align: center;">Articles</th>
+          <th style="width: 120px; text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in categories %}
+        <tr>
+          <!-- Sort Order -->
+          <td style="text-align: center;">
+            <span style="font-weight: 800; color: var(--admin-text-muted); font-size: 13px;">
+              #{{ c.order_index }}
+            </span>
+          </td>
+
+          <!-- Name & Tamil with Icon -->
+          <td>
+            <div class="category-row-meta">
+              <div class="category-item-icon-pill" title="Desk Icon: fa-{{ c.icon }}">
+                <i class="fas fa-{{ c.icon or 'newspaper' }}"></i>
+              </div>
+              <div class="category-item-text">
+                <a href="{{ url_for('public.category', slug=c.slug) }}" target="_blank" class="category-item-name-en">
+                  {{ c.name_en }}
+                </a>
+                <div class="category-item-name-ta">
+                  {{ c.name_ta }}
+                </div>
+              </div>
+            </div>
+          </td>
+
+          <!-- Slug Pill -->
+          <td>
+            <code class="slug-pill">/category/{{ c.slug }}</code>
+          </td>
+
+          <!-- Article Count Badge -->
+          <td style="text-align: center;">
+            <span class="category-count-badge" title="{{ c.article_count }} published, {{ c.total_article_count }} total">
+              <i class="fas fa-newspaper" style="font-size: 11px;"></i>
+              {{ c.article_count }} <span style="font-weight: 500; font-size: 11px; opacity: 0.8;">({{ c.total_article_count }})</span>
+            </span>
+          </td>
+
+          <!-- Action Buttons -->
+          <td style="text-align: right;">
+            <div class="table-actions" style="justify-content: flex-end;">
+              <!-- View on Live Site -->
+              <a href="{{ url_for('public.category', slug=c.slug) }}" target="_blank" 
+                 class="table-action-btn view-btn" title="View live category page on public website">
+                <i class="fas fa-external-link-alt"></i>
+              </a>
+
+              <!-- Edit Category Trigger -->
+              <button type="button" 
+                      class="table-action-btn edit-btn open-edit-category-modal-btn" 
+                      data-id="{{ c.id }}"
+                      data-name-en="{{ c.name_en }}"
+                      data-name-ta="{{ c.name_ta }}"
+                      data-slug="{{ c.slug }}"
+                      data-icon="{{ c.icon }}"
+                      data-order="{{ c.order_index }}"
+                      data-desc-en="{{ c.description_en or '' }}"
+                      data-desc-ta="{{ c.description_ta or '' }}"
+                      title="Edit category settings">
+                <i class="fas fa-edit"></i>
+              </button>
+
+              <!-- Safe Delete Trigger -->
+              <button type="button" 
+                      class="table-action-btn delete-btn open-delete-modal-btn" 
+                      data-action-url="{{ url_for('admin.delete_category', id=c.id) }}" 
+                      data-item-name="category '{{ c.name_en }}' (all {{ c.total_article_count }} articles will be safely preserved)" 
+                      title="Delete category">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" style="text-align: center; padding: 40px; color: var(--admin-text-muted);">
+            No categories created yet. Fill out the form on the left to add your first news desk.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Table Summary Footer -->
+    <div class="table-pagination-footer">
+      <span style="font-size: 12.5px; color: var(--admin-text-muted);">
+        Total <strong>{{ categories|length }}</strong> editorial desks active &bull; Articles safely unlinked upon category removal.
+      </span>
+      <a href="{{ url_for('admin.articles') }}" class="admin-btn admin-btn-outline admin-btn-sm">
+        <i class="fas fa-newspaper"></i> Manage Articles
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<!-- ======================================================================
+     3. INTERACTIVE EDIT CATEGORY MODAL
+     ====================================================================== -->
+<div class="admin-modal-backdrop" id="edit-category-modal">
+  <div class="admin-modal modal-edit-card">
+    <div class="modal-header-row">
+      <h3><i class="fas fa-edit" style="color: var(--accent-orange);"></i> Edit News Category</h3>
+      <button type="button" class="modal-close-icon-btn close-edit-category-modal-btn">&times;</button>
+    </div>
+
+    <form id="edit-category-form" method="POST">
+      <div class="form-grid-2">
+        <div class="form-group-admin">
+          <label for="edit-name-en">Category Name (English) *</label>
+          <input type="text" name="name_en" id="edit-name-en" class="admin-input" required>
+        </div>
+
+        <div class="form-group-admin">
+          <label for="edit-name-ta">Category Name (Tamil) *</label>
+          <input type="text" name="name_ta" id="edit-name-ta" class="admin-input" required style="font-family: var(--font-tamil);">
+        </div>
+      </div>
+
+      <div class="form-group-admin">
+        <label for="edit-slug">URL Slug</label>
+        <input type="text" name="slug" id="edit-slug" class="admin-input">
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-group-admin">
+          <label for="edit-category-icon-input">Icon (FontAwesome)</label>
+          <div class="category-icon-input-group">
+            <input type="text" name="icon" id="edit-category-icon-input" class="admin-input">
+            <div class="category-icon-preview-box" id="edit-category-icon-preview">
+              <i class="fas fa-newspaper"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group-admin">
+          <label for="edit-order">Sort Order Priority</label>
+          <input type="number" name="order_index" id="edit-order" class="admin-input" min="1">
+        </div>
+      </div>
+
+      <div class="form-group-admin">
+        <label for="edit-desc-en">Description (English)</label>
+        <textarea name="description_en" id="edit-desc-en" class="admin-textarea" style="min-height: 60px;"></textarea>
+      </div>
+
+      <div class="form-group-admin">
+        <label for="edit-desc-ta">Description (Tamil)</label>
+        <textarea name="description_ta" id="edit-desc-ta" class="admin-textarea" style="min-height: 60px; font-family: var(--font-tamil);"></textarea>
+      </div>
+
+      <div class="modal-actions" style="justify-content: flex-end; margin-top: 20px;">
+        <button type="button" class="admin-btn admin-btn-secondary close-edit-category-modal-btn">Cancel</button>
+        <button type="submit" class="admin-btn admin-btn-primary"><i class="fas fa-save"></i> Update Category</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

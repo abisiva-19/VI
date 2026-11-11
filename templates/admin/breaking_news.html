@@ -1,0 +1,269 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}Breaking News Ticker{% endblock %}
+{% block page_title %}Breaking News Ticker{% endblock %}
+
+{% block admin_content %}
+
+<!-- ======================================================================
+     1. HEADER ACTION BAR
+     ====================================================================== -->
+<div class="articles-header-bar">
+  <div>
+    <h2 class="section-title">
+      <i class="fas fa-bolt" style="color: #dc2626;"></i> Breaking News Ticker
+      <span class="tab-badge" style="background: rgba(220, 38, 38, 0.12); color: #dc2626; font-size: 13px;">
+        {{ active_count or 0 }} Active &bull; {{ news_items|length }} Total
+      </span>
+    </h2>
+    <p class="section-subtitle">
+      Control real-time breaking headlines broadcasted on the animated homepage multi-card ticker, order priority, and link destinations.
+    </p>
+  </div>
+
+  <div style="display: flex; gap: 10px; align-items: center;">
+    <a href="{{ url_for('public.index') }}" target="_blank" class="admin-btn admin-btn-outline" title="View live breaking ticker on public homepage">
+      <i class="fas fa-globe"></i> View Public Ticker
+    </a>
+    <a href="{{ url_for('admin.articles') }}" class="admin-btn admin-btn-secondary" title="View all editorial articles">
+      <i class="fas fa-newspaper"></i> All Articles
+    </a>
+  </div>
+</div>
+
+<!-- ======================================================================
+     2. LIVE HOMEPAGE TICKER SIMULATION STRIP
+     ====================================================================== -->
+<div class="ticker-preview-strip">
+  <div class="ticker-preview-badge">
+    <i class="fas fa-bolt"></i> முக்கியச் செய்திகள் &bull; LIVE TICKER
+  </div>
+  <div class="ticker-preview-text">
+    {% set first_active = news_items|selectattr('is_active', 'equalto', true)|first %}
+    {% if first_active %}
+      <strong>{{ first_active.title }}</strong> &bull; <span style="font-family: var(--font-tamil); opacity: 0.9;">{{ first_active.title_ta }}</span>
+    {% else %}
+      <em>No breaking headlines are currently active on the public ticker.</em>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ======================================================================
+     3. ASYMMETRIC 2-COLUMN LAYOUT (Sticky Form on Left, Wide Table on Right)
+     ====================================================================== -->
+<div class="ticker-layout-grid">
+
+  <!-- ==================== LEFT: COMPOSE BREAKING HEADLINE ==================== -->
+  <div class="ticker-form-panel">
+    <h3 class="category-form-title" style="color: #dc2626;">
+      <i class="fas fa-bullhorn" style="color: #dc2626;"></i> Broadcast Headline
+    </h3>
+
+    <form action="{{ url_for('admin.breaking_news') }}" method="POST">
+      <!-- English Headline -->
+      <div class="form-group-admin">
+        <label for="title">Headline Text (English) *</label>
+        <textarea name="title" id="title" class="admin-textarea" style="min-height: 80px;" required placeholder="Breaking news text in English..."></textarea>
+      </div>
+
+      <!-- Tamil Headline -->
+      <div class="form-group-admin">
+        <label for="title_ta">Headline Text (Tamil / தமிழ்) *</label>
+        <textarea name="title_ta" id="title_ta" class="admin-textarea" style="min-height: 80px; font-family: var(--font-tamil);" required placeholder="முக்கிய செய்தி உரை தமிழில்..."></textarea>
+      </div>
+
+      <!-- Link URL -->
+      <div class="form-group-admin">
+        <label for="link_url">Target Article Link / URL (Optional)</label>
+        <input type="text" name="link_url" id="link_url" class="admin-input" placeholder="/article/slug or https://...">
+        <div class="help-text">Clicking ticker card redirects visitor to this URL.</div>
+      </div>
+
+      <!-- Order & Active Checkbox -->
+      <div class="form-grid-2" style="align-items: center; background: var(--admin-bg); padding: 14px; border-radius: var(--admin-radius); margin-bottom: 20px; border: 1px solid var(--admin-border);">
+        <div class="form-group-admin" style="margin-bottom: 0;">
+          <label for="order_index">Sort Priority</label>
+          <input type="number" name="order_index" id="order_index" class="admin-input" value="{{ (news_items|length) + 1 }}" min="1">
+        </div>
+
+        <div style="display: flex; align-items: center; padding-top: 20px;">
+          <label class="switch-label">
+            <input type="checkbox" name="is_active" value="1" checked>
+            <span style="font-size: 13px;">Active on Ticker</span>
+          </label>
+        </div>
+      </div>
+
+      <button type="submit" class="admin-btn admin-btn-primary" style="width: 100%; height: 42px; justify-content: center; background: #dc2626; border-color: #dc2626;">
+        <i class="fas fa-bullhorn"></i> Post to Homepage Ticker
+      </button>
+    </form>
+  </div>
+
+  <!-- ==================== RIGHT: ACTIVE TICKER ITEMS TABLE ==================== -->
+  <div class="card-table-wrap" style="margin-bottom: 0;">
+    <!-- Table Toolbar -->
+    <div class="table-header-toolbar">
+      <h3 style="font-size: 15px; font-weight: 700; color: var(--admin-text-main); display: flex; align-items: center; gap: 8px;">
+        <i class="fas fa-rss" style="color: var(--accent-orange);"></i> Live Ticker Items ({{ news_items|length }})
+      </h3>
+
+      <!-- Quick Search Filter -->
+      <div style="position: relative; width: 220px;">
+        <input type="text" placeholder="Quick find headline..." class="table-search-input" style="width: 100%; height: 36px; padding: 6px 12px; font-size: 12.5px;">
+      </div>
+    </div>
+
+    <!-- Responsive Table -->
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th style="width: 70px; text-align: center;">Order</th>
+          <th style="min-width: 280px;">Bilingual Headlines & Link</th>
+          <th style="width: 110px; text-align: center;">Status</th>
+          <th style="width: 120px; text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in news_items %}
+        <tr>
+          <!-- Priority Order -->
+          <td style="text-align: center;">
+            <span style="font-weight: 800; color: var(--admin-text-muted); font-size: 13px;">
+              #{{ b.order_index }}
+            </span>
+          </td>
+
+          <!-- Headlines (English & Tamil) -->
+          <td>
+            <div class="ticker-headline-en">
+              {{ b.title }}
+            </div>
+            <div class="ticker-headline-ta">
+              {{ b.title_ta }}
+            </div>
+            {% if b.link_url %}
+            <div>
+              <a href="{{ b.link_url }}" target="_blank" class="ticker-link-pill" title="Destination URL">
+                <i class="fas fa-link"></i> {{ b.link_url }}
+              </a>
+            </div>
+            {% endif %}
+          </td>
+
+          <!-- Interactive Active Status Badge -->
+          <td style="text-align: center;">
+            <span class="status-badge {{ 'active' if b.is_active else 'inactive' }} toggle-breaking-news-btn" 
+                  data-id="{{ b.id }}" 
+                  title="Click to toggle ticker broadcast state">
+              <i class="fas {{ 'fa-check-circle' if b.is_active else 'fa-ban' }}" style="font-size: 10px;"></i>
+              {{ 'Active' if b.is_active else 'Inactive' }}
+            </span>
+          </td>
+
+          <!-- Action Buttons -->
+          <td style="text-align: right;">
+            <div class="table-actions" style="justify-content: flex-end;">
+              <!-- Target Link Preview -->
+              {% if b.link_url %}
+              <a href="{{ b.link_url }}" target="_blank" class="table-action-btn view-btn" title="Open linked article in new tab">
+                <i class="fas fa-external-link-alt"></i>
+              </a>
+              {% endif %}
+
+              <!-- Edit Headline Trigger -->
+              <button type="button" 
+                      class="table-action-btn edit-btn open-edit-ticker-modal-btn" 
+                      data-id="{{ b.id }}"
+                      data-title="{{ b.title }}"
+                      data-title-ta="{{ b.title_ta }}"
+                      data-link="{{ b.link_url or '' }}"
+                      data-order="{{ b.order_index }}"
+                      data-active="{{ 'true' if b.is_active else 'false' }}"
+                      title="Edit headline">
+                <i class="fas fa-edit"></i>
+              </button>
+
+              <!-- Delete Trigger -->
+              <button type="button" 
+                      class="table-action-btn delete-btn open-delete-modal-btn" 
+                      data-action-url="{{ url_for('admin.delete_breaking_news', id=b.id) }}" 
+                      data-item-name="headline '{{ b.title[:30] }}...'" 
+                      title="Permanently remove headline">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" style="text-align: center; padding: 40px; color: var(--admin-text-muted);">
+            No breaking headlines added yet. Use the broadcast form on the left to post live items to the ticker.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Table Summary Footer -->
+    <div class="table-pagination-footer">
+      <span style="font-size: 12.5px; color: var(--admin-text-muted);">
+        Active items rotate continuously on the public homepage breaking news ticker bar.
+      </span>
+      <a href="{{ url_for('public.index') }}" target="_blank" class="admin-btn admin-btn-outline admin-btn-sm">
+        <i class="fas fa-play"></i> Watch Ticker
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<!-- ======================================================================
+     4. INTERACTIVE EDIT BREAKING NEWS MODAL
+     ====================================================================== -->
+<div class="admin-modal-backdrop" id="edit-ticker-modal">
+  <div class="admin-modal modal-edit-card">
+    <div class="modal-header-row">
+      <h3><i class="fas fa-edit" style="color: var(--accent-orange);"></i> Edit Breaking Headline</h3>
+      <button type="button" class="modal-close-icon-btn close-edit-ticker-modal-btn">&times;</button>
+    </div>
+
+    <form id="edit-ticker-form" method="POST">
+      <div class="form-group-admin">
+        <label for="edit-ticker-title">Headline Text (English) *</label>
+        <textarea name="title" id="edit-ticker-title" class="admin-textarea" style="min-height: 70px;" required></textarea>
+      </div>
+
+      <div class="form-group-admin">
+        <label for="edit-ticker-title-ta">Headline Text (Tamil / தமிழ்) *</label>
+        <textarea name="title_ta" id="edit-ticker-title-ta" class="admin-textarea" style="min-height: 70px; font-family: var(--font-tamil);" required></textarea>
+      </div>
+
+      <div class="form-group-admin">
+        <label for="edit-ticker-link">Target Article Link / URL</label>
+        <input type="text" name="link_url" id="edit-ticker-link" class="admin-input" placeholder="/article/slug or https://...">
+      </div>
+
+      <div class="form-grid-2" style="align-items: center; background: var(--admin-bg); padding: 14px; border-radius: var(--admin-radius); margin-bottom: 20px; border: 1px solid var(--admin-border);">
+        <div class="form-group-admin" style="margin-bottom: 0;">
+          <label for="edit-ticker-order">Sort Priority</label>
+          <input type="number" name="order_index" id="edit-ticker-order" class="admin-input" min="1">
+        </div>
+
+        <div style="display: flex; align-items: center; padding-top: 20px;">
+          <label class="switch-label">
+            <input type="checkbox" name="is_active" id="edit-ticker-active" value="1">
+            <span style="font-size: 13px;">Active on Ticker</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="justify-content: flex-end;">
+        <button type="button" class="admin-btn admin-btn-secondary close-edit-ticker-modal-btn">Cancel</button>
+        <button type="submit" class="admin-btn admin-btn-primary"><i class="fas fa-save"></i> Update Headline</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

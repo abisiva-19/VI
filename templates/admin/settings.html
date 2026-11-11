@@ -1,0 +1,168 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}Website Settings & Admin Profile{% endblock %}
+{% block page_title %}Website Settings & Profile{% endblock %}
+
+{% block admin_content %}
+
+<div class="form-grid-2" style="align-items: flex-start; gap: 28px;">
+
+  <!-- General Website Settings Form Card -->
+  <div class="form-card" style="margin-bottom: 0;">
+    <h3 style="font-size: 16px; font-weight: 700; color: var(--admin-text-main); margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+      <i class="fas fa-globe" style="color: var(--admin-accent);"></i> General Website Configuration
+    </h3>
+
+    <form action="{{ url_for('admin.settings') }}" method="POST">
+      <input type="hidden" name="action" value="update_settings">
+
+      <!-- Site Name -->
+      <div class="form-grid-2">
+        <div class="form-group-admin">
+          <label for="site_name_en">Portal Name (English)</label>
+          <input type="text" name="site_name_en" id="site_name_en" class="admin-input" value="{{ settings.get('site_name_en', 'Vithaigal Iyakkam') }}">
+        </div>
+
+        <div class="form-group-admin">
+          <label for="site_name_ta">Portal Name (Tamil / தமிழ்)</label>
+          <input type="text" name="site_name_ta" id="site_name_ta" class="admin-input" value="{{ settings.get('site_name_ta', 'விதை இயக்கம்') }}">
+        </div>
+      </div>
+
+      <!-- Tagline -->
+      <div class="form-grid-2">
+        <div class="form-group-admin">
+          <label for="site_tagline_en">Tagline (English)</label>
+          <input type="text" name="site_tagline_en" id="site_tagline_en" class="admin-input" value="{{ settings.get('site_tagline_en', '') }}">
+        </div>
+
+        <div class="form-group-admin">
+          <label for="site_tagline_ta">Tagline (Tamil / தமிழ்)</label>
+          <input type="text" name="site_tagline_ta" id="site_tagline_ta" class="admin-input" value="{{ settings.get('site_tagline_ta', '') }}">
+        </div>
+      </div>
+
+      <!-- Contact Info -->
+      <div class="form-grid-2">
+        <div class="form-group-admin">
+          <label for="site_email">Newsroom Email</label>
+          <input type="email" name="site_email" id="site_email" class="admin-input" value="{{ settings.get('site_email', 'contact@vithaigaliyakkam.org') }}">
+        </div>
+
+        <div class="form-group-admin">
+          <label for="site_phone">Newsline Phone</label>
+          <input type="text" name="site_phone" id="site_phone" class="admin-input" value="{{ settings.get('site_phone', '+91 94430 12345') }}">
+        </div>
+      </div>
+
+      <!-- Addresses -->
+      <div class="form-group-admin">
+        <label for="site_address_en">Office Address (English)</label>
+        <input type="text" name="site_address_en" id="site_address_en" class="admin-input" value="{{ settings.get('site_address_en', '') }}">
+      </div>
+
+      <div class="form-group-admin">
+        <label for="site_address_ta">Office Address (Tamil / தமிழ்)</label>
+        <input type="text" name="site_address_ta" id="site_address_ta" class="admin-input" value="{{ settings.get('site_address_ta', '') }}">
+      </div>
+
+      <!-- About Info -->
+      <div class="form-group-admin">
+        <label for="site_about_en">About Vithaigal Iyakkam (English)</label>
+        <textarea name="site_about_en" id="site_about_en" class="admin-textarea" style="min-height: 80px;">{{ settings.get('site_about_en', '') }}</textarea>
+      </div>
+
+      <div class="form-group-admin">
+        <label for="site_about_ta">About Vithaigal Iyakkam (Tamil / தமிழ்)</label>
+        <textarea name="site_about_ta" id="site_about_ta" class="admin-textarea" style="min-height: 80px;">{{ settings.get('site_about_ta', '') }}</textarea>
+      </div>
+
+      <!-- Social Media URLs -->
+      <h4 style="font-size: 14px; font-weight: 700; margin: 18px 0 12px; color: var(--admin-text-main);">Social Media Channel Links</h4>
+      
+      <div class="form-grid-2">
+        <div class="form-group-admin">
+          <label for="social_facebook"><i class="fab fa-facebook" style="color: #1877f2;"></i> Facebook URL</label>
+          <input type="url" name="social_facebook" id="social_facebook" class="admin-input" value="{{ settings.get('social_facebook', '') }}">
+        </div>
+        <div class="form-group-admin">
+          <label for="social_twitter"><i class="fab fa-x-twitter"></i> Twitter / X URL</label>
+          <input type="url" name="social_twitter" id="social_twitter" class="admin-input" value="{{ settings.get('social_twitter', '') }}">
+        </div>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-group-admin">
+          <label for="social_youtube"><i class="fab fa-youtube" style="color: #ef4444;"></i> YouTube Channel URL</label>
+          <input type="url" name="social_youtube" id="social_youtube" class="admin-input" value="{{ settings.get('social_youtube', '') }}">
+        </div>
+        <div class="form-group-admin">
+          <label for="social_whatsapp"><i class="fab fa-whatsapp" style="color: #22c55e;"></i> WhatsApp Channel URL</label>
+          <input type="url" name="social_whatsapp" id="social_whatsapp" class="admin-input" value="{{ settings.get('social_whatsapp', '') }}">
+        </div>
+      </div>
+
+      <button type="submit" class="admin-btn admin-btn-primary" style="margin-top: 10px;">
+        <i class="fas fa-save"></i> Save Website Settings
+      </button>
+    </form>
+  </div>
+
+  <!-- Admin Profile & Security Card -->
+  <div style="display: flex; flex-direction: column; gap: 24px;">
+    
+    <!-- Profile Info Box -->
+    <div class="form-card" style="margin-bottom: 0;">
+      <h3 style="font-size: 16px; font-weight: 700; color: var(--admin-text-main); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+        <i class="fas fa-user-circle" style="color: var(--admin-blue);"></i> Administrator Profile
+      </h3>
+      <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+        <div class="user-avatar-circle" style="width: 54px; height: 54px; font-size: 20px;">
+          {{ (user.full_name or user.username)[:1] }}
+        </div>
+        <div>
+          <h4 style="font-size: 16px; font-weight: 700;">{{ user.full_name }}</h4>
+          <span style="font-size: 13px; color: var(--admin-text-muted);">{{ user.email }}</span>
+          <div style="margin-top: 4px;">
+            <span class="status-badge published">{{ user.role|upper }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Change Password Form Card -->
+    <div class="form-card" style="margin-bottom: 0;">
+      <h3 style="font-size: 16px; font-weight: 700; color: var(--admin-text-main); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+        <i class="fas fa-key" style="color: #f59e0b;"></i> Change Password
+      </h3>
+
+      <form action="{{ url_for('admin.settings') }}" method="POST">
+        <input type="hidden" name="action" value="change_password">
+
+        <div class="form-group-admin">
+          <label for="current_password">Current Password *</label>
+          <input type="password" name="current_password" id="current_password" class="admin-input" required placeholder="Enter current password">
+        </div>
+
+        <div class="form-group-admin">
+          <label for="new_password">New Password *</label>
+          <input type="password" name="new_password" id="new_password" class="admin-input" required minlength="6" placeholder="Minimum 6 characters">
+        </div>
+
+        <div class="form-group-admin">
+          <label for="confirm_password">Confirm New Password *</label>
+          <input type="password" name="confirm_password" id="confirm_password" class="admin-input" required minlength="6" placeholder="Repeat new password">
+        </div>
+
+        <button type="submit" class="admin-btn admin-btn-secondary" style="width: 100%; justify-content: center;">
+          <i class="fas fa-lock"></i> Update Admin Password
+        </button>
+      </form>
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}
+

@@ -1,0 +1,357 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{{ settings.get('site_name_ta', 'விதை இயக்கம்') if current_lang == 'ta' else settings.get('site_name_en', 'Vithaigal Iyakkam') }} - {{ settings.get('site_tagline_ta', 'தமிழ் டிஜிட்டல் செய்தி மற்றும் இதழியல் தளம்') if current_lang == 'ta' else settings.get('site_tagline_en', 'Tamil Digital News & Editorial Platform') }}
+{% endblock %}
+
+{% block content %}
+
+<!-- ======================================================================
+     1. HERO FEATURED NEWS SECTION (Lead & Secondary Grid)
+     ====================================================================== -->
+<section class="hero-news-grid">
+  {% if featured_lead %}
+  <!-- Main Lead Article -->
+  <article class="lead-card">
+    <div class="card-img-wrap">
+      <img src="{{ featured_lead.display_image }}" alt="{{ featured_lead.title }}" onerror="this.src='/static/images/placeholder.jpg'">
+      {% if featured_lead.has_video %}
+      <span class="card-video-badge" title="Includes Video"><i class="fas fa-play"></i></span>
+      {% endif %}
+      <div class="lead-overlay"></div>
+    </div>
+    <div class="lead-content">
+      {% if featured_lead.category %}
+      <a href="{{ url_for('public.category', slug=featured_lead.category.slug) }}" class="card-badge">
+        {{ featured_lead.category.name_ta if current_lang == 'ta' else featured_lead.category.name_en }}
+      </a>
+      {% endif %}
+      <h1 class="lead-title">
+        <a href="{{ url_for('public.article', slug=featured_lead.slug) }}">
+          {{ featured_lead.title_ta if (current_lang == 'ta' and featured_lead.title_ta) else featured_lead.title }}
+        </a>
+      </h1>
+      <p class="lead-summary">
+        {{ featured_lead.summary_ta if (current_lang == 'ta' and featured_lead.summary_ta) else featured_lead.summary }}
+      </p>
+      <div class="card-meta">
+        <span class="card-meta-item"><i class="far fa-user"></i> {{ featured_lead.author_ta if current_lang == 'ta' else featured_lead.author }}</span>
+        <span class="card-meta-item"><i class="far fa-calendar-alt"></i> {{ featured_lead.formatted_date_ta if current_lang == 'ta' else featured_lead.formatted_date }}</span>
+        <span class="card-meta-item"><i class="far fa-clock"></i> {{ featured_lead.reading_time }} {% if current_lang == 'ta' %}நிமிட வாசிப்பு{% else %}min read{% endif %}</span>
+        <span class="card-meta-item"><i class="far fa-eye"></i> {{ featured_lead.views }} {% if current_lang == 'ta' %}பார்வைகள்{% else %}views{% endif %}</span>
+      </div>
+    </div>
+    <!-- Interactive Bookmark Action Button -->
+    <button type="button" class="bookmark-action-btn" data-article-id="{{ featured_lead.id }}" title="Bookmark article">
+      <i class="far fa-bookmark"></i>
+    </button>
+  </article>
+  {% endif %}
+
+  <!-- Sub-featured News Stack -->
+  <div class="sub-featured-grid">
+    {% for art in sub_featured[:2] %}
+    <article class="sub-lead-card">
+      <div class="card-img-wrap">
+        <img src="{{ art.display_image }}" alt="{{ art.title }}" onerror="this.src='/static/images/placeholder.jpg'">
+        {% if art.has_video %}
+        <span class="card-video-badge" title="Includes Video"><i class="fas fa-play"></i></span>
+        {% endif %}
+        <div class="sub-lead-overlay"></div>
+      </div>
+      <div class="sub-lead-content">
+        {% if art.category %}
+        <a href="{{ url_for('public.category', slug=art.category.slug) }}" class="card-badge" style="font-size: 10px; padding: 2px 8px;">
+          {{ art.category.name_ta if current_lang == 'ta' else art.category.name_en }}
+        </a>
+        {% endif %}
+        <h2 class="sub-lead-title">
+          <a href="{{ url_for('public.article', slug=art.slug) }}">
+            {{ art.title_ta if (current_lang == 'ta' and art.title_ta) else art.title }}
+          </a>
+        </h2>
+        <div class="card-meta">
+          <span class="card-meta-item"><i class="far fa-calendar-alt"></i> {{ art.formatted_date_ta if current_lang == 'ta' else art.formatted_date }}</span>
+          <span class="card-meta-item"><i class="far fa-eye"></i> {{ art.views }}</span>
+        </div>
+      </div>
+      <button type="button" class="bookmark-action-btn" data-article-id="{{ art.id }}" title="Bookmark article">
+        <i class="far fa-bookmark"></i>
+      </button>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ======================================================================
+     2. MAIN CONTENT LAYOUT (Latest News Stream + Sidebar)
+     ====================================================================== -->
+<div class="main-content-layout">
+  <!-- Left Main Column -->
+  <div class="main-stream">
+
+    <!-- Latest News Section -->
+    <section style="margin-bottom: 40px;">
+      <div class="section-header">
+        <h2 class="section-title">
+          <i class="fas fa-newspaper"></i>
+          <span>{% if current_lang == 'ta' %}சமீபத்திய முக்கிய செய்திகள்{% else %}Latest News Stream{% endif %}</span>
+        </h2>
+        <a href="{{ url_for('public.search', sort='latest') }}" class="view-all-link">
+          <span>{% if current_lang == 'ta' %}அனைத்தும் பார்க்க{% else %}View All{% endif %}</span>
+          <i class="fas fa-arrow-right"></i>
+        </a>
+      </div>
+
+      <!-- Interactive Filter Tabs -->
+      <div class="interactive-filter-bar">
+        <button type="button" class="filter-tab-btn active" data-filter="all">
+          <i class="fas fa-th-large"></i> {% if current_lang == 'ta' %}அனைத்தும்{% else %}All News{% endif %}
+        </button>
+        {% for cat in nav_categories[:5] %}
+        <button type="button" class="filter-tab-btn" data-filter="{{ cat.slug }}">
+          <i class="fas fa-{{ cat.icon or 'tag' }}"></i> {{ cat.name_ta if current_lang == 'ta' else cat.name_en }}
+        </button>
+        {% endfor %}
+      </div>
+
+      <div class="articles-grid" id="homepage-filterable-grid">
+        {% for art in latest_articles %}
+        <article class="article-card filterable-card" data-category="{{ art.category.slug if art.category else 'general' }}">
+          <div class="card-thumb">
+            {% if art.category %}
+            <a href="{{ url_for('public.category', slug=art.category.slug) }}" class="card-badge badge-top-left">
+              {{ art.category.name_ta if current_lang == 'ta' else art.category.name_en }}
+            </a>
+            {% endif %}
+            <button type="button" class="bookmark-action-btn" data-article-id="{{ art.id }}" title="Bookmark article">
+              <i class="far fa-bookmark"></i>
+            </button>
+            <a href="{{ url_for('public.article', slug=art.slug) }}">
+              <img src="{{ art.display_image }}" alt="{{ art.title }}" loading="lazy" onerror="this.src='/static/images/placeholder.jpg'">
+            </a>
+            {% if art.has_video %}
+            <span class="card-video-badge" title="Includes Video"><i class="fas fa-play"></i></span>
+            {% endif %}
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">
+              <a href="{{ url_for('public.article', slug=art.slug) }}">
+                {{ art.title_ta if (current_lang == 'ta' and art.title_ta) else art.title }}
+              </a>
+            </h3>
+            <p class="card-excerpt">
+              {{ art.summary_ta if (current_lang == 'ta' and art.summary_ta) else art.summary }}
+            </p>
+            <div class="card-footer">
+              <span><i class="far fa-calendar-alt"></i> {{ art.formatted_date_ta if current_lang == 'ta' else art.formatted_date }}</span>
+              <a href="{{ url_for('public.article', slug=art.slug) }}" class="read-more-link">
+                <span>{% if current_lang == 'ta' %}மேலும் வாசிக்க{% else %}Read More{% endif %}</span>
+                <i class="fas fa-chevron-right" style="font-size: 10px;"></i>
+              </a>
+            </div>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- Category Specific Horizontal Showcases -->
+    {% for block in category_blocks %}
+    <section class="category-block">
+      <div class="cat-header">
+        <h3 class="cat-header-title">
+          <i class="fas fa-{{ block.category.icon or 'newspaper' }}" style="color: var(--accent-orange);"></i>
+          <span>{{ block.category.name_ta if current_lang == 'ta' else block.category.name_en }}</span>
+        </h3>
+        <a href="{{ url_for('public.category', slug=block.category.slug) }}" class="view-all-link">
+          <span>{% if current_lang == 'ta' %}இப்பிரிவின் செய்திகள்{% else %}Explore Section{% endif %}</span>
+          <i class="fas fa-arrow-right"></i>
+        </a>
+      </div>
+
+      <div class="articles-grid">
+        {% for art in block.articles[:4] %}
+        <article class="article-card">
+          <div class="card-thumb">
+            <button type="button" class="bookmark-action-btn" data-article-id="{{ art.id }}" title="Bookmark article">
+              <i class="far fa-bookmark"></i>
+            </button>
+            <a href="{{ url_for('public.article', slug=art.slug) }}">
+              <img src="{{ art.display_image }}" alt="{{ art.title }}" loading="lazy" onerror="this.src='/static/images/placeholder.jpg'">
+            </a>
+            {% if art.has_video %}
+            <span class="card-video-badge" title="Includes Video"><i class="fas fa-play"></i></span>
+            {% endif %}
+          </div>
+          <div class="card-body">
+            <h4 class="card-title">
+              <a href="{{ url_for('public.article', slug=art.slug) }}">
+                {{ art.title_ta if (current_lang == 'ta' and art.title_ta) else art.title }}
+              </a>
+            </h4>
+            <div class="card-footer">
+              <span><i class="far fa-calendar-alt"></i> {{ art.formatted_date_ta if current_lang == 'ta' else art.formatted_date }}</span>
+              <span class="card-meta-item"><i class="far fa-eye"></i> {{ art.views }}</span>
+            </div>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+    {% endfor %}
+
+  </div>
+
+  <!-- Right Sidebar -->
+  <aside class="sidebar">
+
+    <!-- Trending News (Ranked 1-5) -->
+    <div class="sidebar-widget">
+      <h3 class="widget-title">
+        <i class="fas fa-fire"></i>
+        <span>{% if current_lang == 'ta' %}ட்ரெண்டிங் செய்திகள்{% else %}Trending News{% endif %}</span>
+      </h3>
+      <div class="ranked-list">
+        {% for art in trending_articles %}
+        <div class="ranked-item">
+          <div class="rank-number">0{{ loop.index }}</div>
+          <div class="ranked-info">
+            <h4 class="ranked-title">
+              <a href="{{ url_for('public.article', slug=art.slug) }}">
+                {{ art.title_ta if (current_lang == 'ta' and art.title_ta) else art.title }}
+              </a>
+            </h4>
+            <div class="ranked-meta">
+              <span><i class="far fa-eye"></i> {{ art.views }} {% if current_lang == 'ta' %}பார்வைகள்{% else %}views{% endif %}</span>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Most Read Articles -->
+    <div class="sidebar-widget">
+      <h3 class="widget-title">
+        <i class="fas fa-chart-line"></i>
+        <span>{% if current_lang == 'ta' %}அதிகம் வாசிக்கப்பட்டவை{% else %}Most Read Articles{% endif %}</span>
+      </h3>
+      <div class="ranked-list">
+        {% for art in most_read_articles %}
+        <div class="ranked-item">
+          <div class="rank-number" style="color: #94a3b8;">#{{ loop.index }}</div>
+          <div class="ranked-info">
+            <h4 class="ranked-title">
+              <a href="{{ url_for('public.article', slug=art.slug) }}">
+                {{ art.title_ta if (current_lang == 'ta' and art.title_ta) else art.title }}
+              </a>
+            </h4>
+            <div class="ranked-meta">
+              <span>{{ art.formatted_date_ta if current_lang == 'ta' else art.formatted_date }}</span>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Categories Quick Navigation Widget -->
+    <div class="sidebar-widget">
+      <h3 class="widget-title">
+        <i class="fas fa-th-large"></i>
+        <span>{% if current_lang == 'ta' %}செய்திப் பிரிவுகள்{% else %}Explore Categories{% endif %}</span>
+      </h3>
+      <div class="category-pills-list">
+        {% for cat in nav_categories %}
+        <a href="{{ url_for('public.category', slug=cat.slug) }}" class="cat-pill">
+          <span>{{ cat.name_ta if current_lang == 'ta' else cat.name_en }}</span>
+          <span class="pill-count">({{ cat.article_count }})</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+  </aside>
+</div>
+
+<!-- ======================================================================
+     3. FEATURED VIDEO / YOUTUBE SECTION
+     ====================================================================== -->
+{% if video_articles %}
+<section class="video-section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">
+        <i class="fab fa-youtube" style="color: #ef4444;"></i>
+        <span>{% if current_lang == 'ta' %}வீடியோ ஆவணங்கள் & யூடியூப் செய்திகள்{% else %}Featured Video Reports & Documentaries{% endif %}</span>
+      </h2>
+      <a href="{{ url_for('public.category', slug='youtube') }}" class="view-all-link" style="color: #f87171;">
+        <span>{% if current_lang == 'ta' %}அனைத்து வீடியோக்கள்{% else %}View All Videos{% endif %}</span>
+        <i class="fas fa-arrow-right"></i>
+      </a>
+    </div>
+
+    <div class="video-grid">
+      {% for art in video_articles %}
+      <div class="video-card">
+        <div class="video-thumb">
+          <img src="{{ art.display_image }}" alt="{{ art.title }}" loading="lazy" onerror="this.src='/static/images/placeholder.jpg'">
+          <a href="{{ url_for('public.article', slug=art.slug) }}" 
+             class="play-icon-overlay open-video-modal-btn" 
+             data-video-id="{{ art.youtube_embed_id }}" 
+             data-video-title="{{ art.title_ta if (current_lang == 'ta' and art.title_ta) else art.title }}" 
+             data-article-url="{{ url_for('public.article', slug=art.slug) }}"
+             title="Watch Video">
+            <div class="play-circle">
+              <i class="fas fa-play" style="margin-left: 2px;"></i>
+            </div>
+          </a>
+        </div>
+        <div class="video-info">
+          <h3 class="video-title">
+            <a href="{{ url_for('public.article', slug=art.slug) }}">
+              {{ art.title_ta if (current_lang == 'ta' and art.title_ta) else art.title }}
+            </a>
+          </h3>
+          <div style="font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; margin-top: auto;">
+            <span><i class="far fa-calendar-alt"></i> {{ art.formatted_date_ta if current_lang == 'ta' else art.formatted_date }}</span>
+            <span><i class="far fa-eye"></i> {{ art.views }}</span>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ======================================================================
+     4. NEWSLETTER SUBSCRIPTION BANNER
+     ====================================================================== -->
+<section class="newsletter-banner">
+  <div class="newsletter-inner">
+    <div class="newsletter-text">
+      <h3>
+        <i class="fas fa-paper-plane" style="color: var(--accent-orange); margin-right: 8px;"></i>
+        {% if current_lang == 'ta' %}தினசரி முக்கிய செய்திகளை மின்னஞ்சலில் பெறுங்கள்{% else %}Stay Ahead with Vithaigal Editorial Newsletter{% endif %}
+      </h3>
+      <p>
+        {% if current_lang == 'ta' %}
+        கீழடி அகழாய்வு, தமிழக நிகழ்வுகள், அரசு வேலைவாய்ப்பு மற்றும் விசேட வரலாற்று ஆய்வுகளை உங்கள் மின்னஞ்சலுக்கு நேரடியாகப் பெறுங்கள்.
+        {% else %}
+        Get Keezhadi archaeological insights, investigative reports, TNPSC updates, and cultural digests delivered to your inbox every morning.
+        {% endif %}
+      </p>
+    </div>
+    <form action="{{ url_for('public.subscribe') }}" method="POST" class="ajax-newsletter-form newsletter-form-wrap">
+      <input type="email" name="email" class="newsletter-input" placeholder="{% if current_lang == 'ta' %}உங்கள் மின்னஞ்சல் முகவரியை உள்ளிடவும்...{% else %}Enter your email address...{% endif %}" required>
+      <button type="submit" class="newsletter-btn">
+        <i class="fas fa-bell"></i>
+        <span>{% if current_lang == 'ta' %}இணையுங்கள்{% else %}Subscribe Now{% endif %}</span>
+      </button>
+    </form>
+  </div>
+</section>
+
+{% endblock %}

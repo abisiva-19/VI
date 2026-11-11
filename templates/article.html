@@ -1,0 +1,287 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{{ article.title_ta if (current_lang == 'ta' and article.title_ta) else article.title }} - {{ settings.get('site_name_ta', 'விதை இயக்கம்') if current_lang == 'ta' else settings.get('site_name_en', 'Vithaigal Iyakkam') }}
+{% endblock %}
+
+{% block meta_desc %}
+{{ article.summary_ta if (current_lang == 'ta' and article.summary_ta) else article.summary }}
+{% endblock %}
+
+{% block content %}
+
+<div class="main-content-layout">
+  <!-- Main Article Body Column -->
+  <article class="main-stream" style="background: var(--bg-surface); padding: 32px; border-radius: var(--radius-md); border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);">
+    
+    <!-- Article Header -->
+    <header class="article-header">
+      <!-- Breadcrumb -->
+      <nav class="breadcrumb">
+        <a href="{{ url_for('public.index') }}"><i class="fas fa-home"></i></a>
+        <span>/</span>
+        {% if article.category %}
+        <a href="{{ url_for('public.category', slug=article.category.slug) }}">
+          {{ article.category.name_ta if current_lang == 'ta' else article.category.name_en }}
+        </a>
+        <span>/</span>
+        {% endif %}
+        <span style="color: var(--text-muted); font-size: 12px;">{% if current_lang == 'ta' %}கட்டுரை விவரம்{% else %}Article Story{% endif %}</span>
+      </nav>
+
+      <!-- Category Pill -->
+      {% if article.category %}
+      <div style="margin-bottom: 14px;">
+        <a href="{{ url_for('public.category', slug=article.category.slug) }}" class="card-badge">
+          {{ article.category.name_ta if current_lang == 'ta' else article.category.name_en }}
+        </a>
+      </div>
+      {% endif %}
+
+      <!-- Main Headline -->
+      <h1 class="article-main-title">
+        {{ article.title_ta if (current_lang == 'ta' and article.title_ta) else article.title }}
+      </h1>
+
+      <!-- Meta Bar -->
+      <div class="article-meta-bar">
+        <div class="author-info">
+          <div class="author-avatar">
+            {{ (article.author_ta if current_lang == 'ta' else article.author)[:1] }}
+          </div>
+          <div>
+            <strong style="display: block; color: var(--text-primary); font-size: 14px;">
+              {{ article.author_ta if current_lang == 'ta' else article.author }}
+            </strong>
+            <small style="color: var(--text-muted);">{% if current_lang == 'ta' %}செய்தி நிருபர் / ஆசிரியர் குழு{% else %}Vithaigal Editorial Desk{% endif %}</small>
+          </div>
+        </div>
+
+        <div class="meta-stats">
+          <span><i class="far fa-calendar-alt" style="color: var(--accent-orange);"></i> {{ article.formatted_date_ta if current_lang == 'ta' else article.formatted_date }}</span>
+          <span><i class="far fa-clock" style="color: var(--accent-orange);"></i> {{ article.reading_time }} {% if current_lang == 'ta' %}நிமிடம்{% else %}min read{% endif %}</span>
+          <span><i class="far fa-eye" style="color: var(--accent-orange);"></i> {{ article.views }} {% if current_lang == 'ta' %}பார்வைகள்{% else %}views{% endif %}</span>
+          <span id="article-likes-display"><i class="fas fa-heart" style="color: #ef4444;"></i> <strong id="likes-count">{{ article.likes or 0 }}</strong></span>
+        </div>
+      </div>
+
+      <!-- Interactive Article Experience Toolbar (Audio, Font Resize, Reactions) -->
+      <div class="article-interaction-toolbar">
+        <!-- Audio Read Aloud Player -->
+        <div class="audio-reader-box">
+          <button type="button" class="tool-btn audio-btn" id="tts-audio-btn" title="Listen to this article / செய்தியைக் கேளுங்கள்">
+            <i class="fas fa-volume-up" id="tts-icon"></i>
+            <span id="tts-text">{% if current_lang == 'ta' %}செய்தியைக் கேளுங்கள்{% else %}Listen to Story{% endif %}</span>
+          </button>
+        </div>
+
+        <!-- Font Size Adjusters -->
+        <div class="font-size-adjuster" title="Adjust font size">
+          <span style="font-size: 11px; color: var(--text-muted); font-weight: 600; margin-right: 4px;">{% if current_lang == 'ta' %}எழுத்தளவு:{% else %}Font:{% endif %}</span>
+          <button type="button" class="font-btn" id="font-decrease" title="Decrease font size">A-</button>
+          <button type="button" class="font-btn active" id="font-normal" title="Normal font size">A</button>
+          <button type="button" class="font-btn" id="font-increase" title="Increase font size">A+</button>
+        </div>
+
+        <!-- Like / Applaud Button with Floating Hearts -->
+        <div class="like-btn-wrap">
+          <button type="button" class="tool-btn like-action-btn" id="like-article-btn" data-article-id="{{ article.id }}" title="Like this story">
+            <i class="far fa-heart"></i>
+            <span>{% if current_lang == 'ta' %}பாராட்டு{% else %}Applaud{% endif %}</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Social Share Bar & Bookmark Toggle -->
+    <div class="social-share-bar">
+      <span class="share-label"><i class="fas fa-share-alt"></i> {% if current_lang == 'ta' %}பகிரவும்:{% else %}Share:{% endif %}</span>
+      
+      <!-- WhatsApp Direct Share -->
+      <a href="https://api.whatsapp.com/send?text={{ (article.title_ta if (current_lang == 'ta' and article.title_ta) else article.title)|urlencode }}%20{{ request.url|urlencode }}" target="_blank" class="share-btn whatsapp" title="Share on WhatsApp">
+        <i class="fab fa-whatsapp"></i> WhatsApp
+      </a>
+
+      <!-- Twitter / X -->
+      <a href="https://twitter.com/intent/tweet?text={{ (article.title_ta if (current_lang == 'ta' and article.title_ta) else article.title)|urlencode }}&url={{ request.url|urlencode }}" target="_blank" class="share-btn twitter" title="Share on Twitter">
+        <i class="fab fa-x-twitter"></i> Twitter
+      </a>
+
+      <!-- Facebook -->
+      <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.url|urlencode }}" target="_blank" class="share-btn facebook" title="Share on Facebook">
+        <i class="fab fa-facebook-f"></i> Facebook
+      </a>
+
+      <!-- Telegram -->
+      <a href="https://t.me/share/url?url={{ request.url|urlencode }}&text={{ (article.title_ta if (current_lang == 'ta' and article.title_ta) else article.title)|urlencode }}" target="_blank" class="share-btn telegram" title="Share on Telegram">
+        <i class="fab fa-telegram-plane"></i> Telegram
+      </a>
+
+      <!-- Copy Link -->
+      <button type="button" class="share-btn copy-link" id="copy-article-link-btn" title="Copy article URL">
+        <i class="fas fa-link"></i> {% if current_lang == 'ta' %}இணைப்பு நகல்{% else %}Copy Link{% endif %}
+      </button>
+
+      <!-- Bookmark Action -->
+      <button type="button" class="bookmark-action-btn {% if is_bookmarked %}active{% endif %}" data-article-id="{{ article.id }}" title="Save to bookmarks" style="position: static; margin-left: auto;">
+        <i class="{% if is_bookmarked %}fas{% else %}far{% endif %} fa-bookmark"></i>
+      </button>
+    </div>
+
+    <!-- Featured Image with Click-to-Zoom Lightbox -->
+    <div class="article-featured-image-wrap lightbox-trigger" title="Click to view full image in lightbox">
+      <img src="{{ article.display_image }}" alt="{{ article.title }}" onerror="this.src='/static/images/placeholder.jpg'" data-caption="{{ article.image_caption or article.title }}">
+      <div class="zoom-badge-pill"><i class="fas fa-search-plus"></i> Zoom</div>
+      {% if article.image_caption %}
+      <div class="image-caption-text">
+        <i class="fas fa-camera" style="margin-right: 4px;"></i> {{ article.image_caption }}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- YouTube Video Player Embed (if provided) -->
+    {% if article.youtube_embed_id %}
+    <div class="video-embed-container">
+      <iframe src="https://www.youtube.com/embed/{{ article.youtube_embed_id }}?rel=0" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    </div>
+    {% elif article.video_url %}
+    <div class="video-embed-container">
+      <iframe src="{{ article.video_url }}" title="Video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    </div>
+    {% endif %}
+
+    <!-- Article Rich Content Body -->
+    <div class="article-content-body">
+      <!-- Short Lead Summary -->
+      <p class="lead">
+        {{ article.summary_ta if (current_lang == 'ta' and article.summary_ta) else article.summary }}
+      </p>
+
+      <!-- Full Rich Content -->
+      <div class="rich-text-content">
+        {{ (article.content_ta if (current_lang == 'ta' and article.content_ta) else article.content)|safe }}
+      </div>
+    </div>
+
+    <!-- Tags Cloud -->
+    {% if article.tags %}
+    <div class="article-tags-wrap">
+      <span class="tag-label"><i class="fas fa-tags"></i> {% if current_lang == 'ta' %}குறிச்சொற்கள்:{% else %}Tags:{% endif %}</span>
+      {% for tag in article.tags.split(',') %}
+      <a href="{{ url_for('public.search', q=tag.strip()) }}" class="tag-pill">#{{ tag.strip() }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Previous / Next Article Navigation Links -->
+    <div class="article-nav-links">
+      {% if prev_article %}
+      <a href="{{ url_for('public.article', slug=prev_article.slug) }}" class="nav-link-box">
+        <span class="nav-dir"><i class="fas fa-arrow-left"></i> {% if current_lang == 'ta' %}முந்தைய செய்தி{% else %}Previous Article{% endif %}</span>
+        <span class="nav-title">{{ prev_article.title_ta if (current_lang == 'ta' and prev_article.title_ta) else prev_article.title }}</span>
+      </a>
+      {% else %}
+      <div></div>
+      {% endif %}
+
+      {% if next_article %}
+      <a href="{{ url_for('public.article', slug=next_article.slug) }}" class="nav-link-box" style="text-align: right;">
+        <span class="nav-dir">{% if current_lang == 'ta' %}அடுத்த செய்தி{% else %}Next Article{% endif %} <i class="fas fa-arrow-right"></i></span>
+        <span class="nav-title">{{ next_article.title_ta if (current_lang == 'ta' and next_article.title_ta) else next_article.title }}</span>
+      </a>
+      {% else %}
+      <div></div>
+      {% endif %}
+    </div>
+
+    <!-- Related Articles Section -->
+    {% if related_articles %}
+    <section style="margin-top: 40px;">
+      <div class="section-header">
+        <h3 class="section-title" style="font-size: 18px;">
+          <i class="fas fa-link"></i>
+          <span>{% if current_lang == 'ta' %}தொடர்புடைய முக்கிய கட்டுரைகள்{% else %}Related Articles{% endif %}</span>
+        </h3>
+      </div>
+      <div class="articles-grid" style="margin-bottom: 0;">
+        {% for r in related_articles %}
+        <article class="article-card">
+          <div class="card-thumb">
+            <button type="button" class="bookmark-action-btn" data-article-id="{{ r.id }}" title="Bookmark article">
+              <i class="far fa-bookmark"></i>
+            </button>
+            <a href="{{ url_for('public.article', slug=r.slug) }}">
+              <img src="{{ r.featured_image or url_for('static', filename='images/placeholder.jpg') }}" alt="{{ r.title }}" loading="lazy" onerror="this.src='/static/images/placeholder.jpg'">
+            </a>
+          </div>
+          <div class="card-body">
+            <h4 class="card-title" style="font-size: 14px;">
+              <a href="{{ url_for('public.article', slug=r.slug) }}">
+                {{ r.title_ta if (current_lang == 'ta' and r.title_ta) else r.title }}
+              </a>
+            </h4>
+            <div class="card-footer">
+              <span><i class="far fa-calendar-alt"></i> {{ r.formatted_date_ta if current_lang == 'ta' else r.formatted_date }}</span>
+              <span class="card-meta-item"><i class="far fa-eye"></i> {{ r.views }}</span>
+            </div>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+  </article>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <!-- Trending News -->
+    <div class="sidebar-widget">
+      <h3 class="widget-title">
+        <i class="fas fa-fire"></i>
+        <span>{% if current_lang == 'ta' %}பிரபலமான செய்திகள்{% else %}Trending Stories{% endif %}</span>
+      </h3>
+      <div class="ranked-list">
+        {% for art in trending_articles %}
+        <div class="ranked-item">
+          <div class="rank-number">0{{ loop.index }}</div>
+          <div class="ranked-info">
+            <h4 class="ranked-title">
+              <a href="{{ url_for('public.article', slug=art.slug) }}">
+                {{ art.title_ta if (current_lang == 'ta' and art.title_ta) else art.title }}
+              </a>
+            </h4>
+            <div class="ranked-meta">
+              <span><i class="far fa-eye"></i> {{ art.views }}</span>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Quick Newsletter in Sidebar -->
+    <div class="sidebar-widget" style="background: linear-gradient(135deg, var(--navy-900), var(--navy-800)); color: #fff;">
+      <h3 class="widget-title" style="color: #fff; border-bottom-color: rgba(255,255,255,0.15);">
+        <i class="fas fa-paper-plane" style="color: var(--accent-orange);"></i>
+        <span>{% if current_lang == 'ta' %}செய்தி மடல் சந்தா{% else %}Newsletter{% endif %}</span>
+      </h3>
+      <p style="font-size: 13px; color: #cbd5e1; margin-bottom: 14px;">
+        {% if current_lang == 'ta' %}
+        தினசரி முக்கிய செய்திகளை உடனுக்குடன் உங்கள் மின்னஞ்சலில் பெறுங்கள்.
+        {% else %}
+        Receive top headlines and verified editorial reports straight to your inbox.
+        {% endif %}
+      </p>
+      <form action="{{ url_for('public.subscribe') }}" method="POST" class="ajax-newsletter-form">
+        <input type="email" name="email" class="newsletter-input" placeholder="{% if current_lang == 'ta' %}மின்னஞ்சல் முகவரி{% else %}Your email address{% endif %}" required style="margin-bottom: 10px; width: 100%;">
+        <button type="submit" class="newsletter-btn" style="width: 100%; justify-content: center;">
+          <span>{% if current_lang == 'ta' %}இணைந்திடுங்கள்{% else %}Subscribe{% endif %}</span>
+        </button>
+      </form>
+    </div>
+  </aside>
+</div>
+
+{% endblock %}
+

@@ -1,0 +1,232 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}{% if current_lang == 'ta' %}கண்ணோட்டம்{% else %}Dashboard Overview{% endif %}{% endblock %}
+{% block page_title %}{% if current_lang == 'ta' %}கண்ணோட்டம் (Dashboard Overview){% else %}Dashboard Overview{% endif %}{% endblock %}
+
+{% block admin_content %}
+
+<!-- ======================================================================
+     1. STATS METRICS CARDS
+     ====================================================================== -->
+<div class="stats-grid">
+  <!-- Total Articles -->
+  <div class="stat-card blue">
+    <div class="stat-info">
+      <h5>{% if current_lang == 'ta' %}மொத்த கட்டுரைகள்{% else %}Total Articles{% endif %}</h5>
+      <div class="stat-number">{{ stats.total_articles }}</div>
+      <small style="color: var(--admin-text-muted); font-size: 11px;">
+        {% if current_lang == 'ta' %}
+        {{ stats.published_articles }} வெளியானது, {{ stats.draft_articles }} வரைவுகள்
+        {% else %}
+        {{ stats.published_articles }} published, {{ stats.draft_articles }} drafts
+        {% endif %}
+      </small>
+    </div>
+    <div class="stat-icon-wrap">
+      <i class="fas fa-newspaper"></i>
+    </div>
+  </div>
+
+  <!-- Total Article Views -->
+  <div class="stat-card green">
+    <div class="stat-info">
+      <h5>{% if current_lang == 'ta' %}மொத்தப் பார்வைகள்{% else %}Total Views{% endif %}</h5>
+      <div class="stat-number">{{ "{:,}".format(stats.total_views) }}</div>
+      <small style="color: #10b981; font-size: 11px;">
+        <i class="fas fa-chart-line"></i> {% if current_lang == 'ta' %}நேரலை வாசகர் பரப்பு{% else %}Real-time reader reach{% endif %}
+      </small>
+    </div>
+    <div class="stat-icon-wrap">
+      <i class="fas fa-eye"></i>
+    </div>
+  </div>
+
+  <!-- Active Categories -->
+  <div class="stat-card orange">
+    <div class="stat-info">
+      <h5>{% if current_lang == 'ta' %}செய்திப் பிரிவுகள்{% else %}Categories{% endif %}</h5>
+      <div class="stat-number">{{ stats.total_categories }}</div>
+      <small style="color: var(--accent-orange); font-size: 11px;">
+        {% if current_lang == 'ta' %}செயலில் உள்ள செய்திப் பிரிவுகள்{% else %}Active editorial desks{% endif %}
+      </small>
+    </div>
+    <div class="stat-icon-wrap">
+      <i class="fas fa-th-large"></i>
+    </div>
+  </div>
+
+  <!-- Contact Messages & Subscribers -->
+  <div class="stat-card teal">
+    <div class="stat-info">
+      <h5>{% if current_lang == 'ta' %}வாசகர் கருத்துகள் / சந்தாதாரர்{% else %}Messages / Subscribers{% endif %}</h5>
+      <div class="stat-number">{{ stats.total_messages }} <span style="font-size: 16px; font-weight: 500; color: var(--admin-text-muted);">/ {{ stats.total_subscribers }}</span></div>
+      <small style="color: #00897b; font-size: 11px;">
+        {% if current_lang == 'ta' %}
+        {{ stats.unread_messages }} புதிய வாசகர் செய்திகள்
+        {% else %}
+        {{ stats.unread_messages }} unread inquiries
+        {% endif %}
+      </small>
+    </div>
+    <div class="stat-icon-wrap">
+      <i class="fas fa-envelope-open-text"></i>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================================
+     2. CHARTS SECTION
+     ====================================================================== -->
+<div class="charts-grid">
+  <!-- Category-wise Article Distribution Bar Chart -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <h3 class="chart-title"><i class="fas fa-chart-bar" style="color: var(--admin-accent); margin-right: 6px;"></i> {% if current_lang == 'ta' %}செய்திப்பிரிவு பங்கீடு{% else %}Category Article Distribution{% endif %}</h3>
+      <span style="font-size: 12px; color: var(--admin-text-muted);">{% if current_lang == 'ta' %}தரவுத்தள பதிவுகள்{% else %}From SQLite records{% endif %}</span>
+    </div>
+    <div class="chart-container">
+      <canvas id="categoryBarChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Article Status Donut Chart -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <h3 class="chart-title"><i class="fas fa-chart-pie" style="color: #10b981; margin-right: 6px;"></i> {% if current_lang == 'ta' %}பதிவேற்ற நிலை{% else %}Publication Status{% endif %}</h3>
+      <span style="font-size: 12px; color: var(--admin-text-muted);">{% if current_lang == 'ta' %}நேரலை நிலவரம்{% else %}Live overview{% endif %}</span>
+    </div>
+    <div class="chart-container">
+      <canvas id="statusDonutChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================================
+     3. RECENT ARTICLES TABLE
+     ====================================================================== -->
+<div class="card-table-wrap">
+  <div class="table-header-toolbar">
+    <h3 style="font-size: 15px; font-weight: 700; color: var(--admin-text-main); display: flex; align-items: center; gap: 8px;">
+      <i class="fas fa-clock" style="color: var(--admin-accent);"></i> {% if current_lang == 'ta' %}அண்மையில் வெளியான கட்டுரைகள்{% else %}Recently Published & Updated Articles{% endif %}
+    </h3>
+    <a href="{{ url_for('admin.articles') }}" class="admin-btn admin-btn-secondary admin-btn-sm">
+      {% if current_lang == 'ta' %}அனைத்து கட்டுரைகள்{% else %}View All Articles{% endif %} <i class="fas fa-arrow-right"></i>
+    </a>
+  </div>
+
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th style="width: 60px;">{% if current_lang == 'ta' %}படம்{% else %}Image{% endif %}</th>
+        <th>{% if current_lang == 'ta' %}தலைப்பு{% else %}Title{% endif %}</th>
+        <th>{% if current_lang == 'ta' %}பிரிவு{% else %}Category{% endif %}</th>
+        <th>{% if current_lang == 'ta' %}ஆசிரியர்{% else %}Author{% endif %}</th>
+        <th>{% if current_lang == 'ta' %}நிலை{% else %}Status{% endif %}</th>
+        <th>{% if current_lang == 'ta' %}பார்வைகள்{% else %}Views{% endif %}</th>
+        <th>{% if current_lang == 'ta' %}தேதி{% else %}Published{% endif %}</th>
+        <th style="text-align: right;">{% if current_lang == 'ta' %}செயல்{% else %}Action{% endif %}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in recent_articles %}
+      <tr>
+        <td>
+          <img src="{{ a.featured_image or url_for('static', filename='images/placeholder.jpg') }}" alt="" class="table-thumb" onerror="this.src='/static/images/placeholder.jpg'">
+        </td>
+        <td>
+          <a href="{{ url_for('public.article', slug=a.slug) }}" target="_blank" style="font-weight: 600; color: var(--admin-text-main);">
+            {{ a.title }}
+          </a>
+          {% if a.title_ta %}
+          <div style="font-size: 12px; color: var(--admin-text-muted);">{{ a.title_ta }}</div>
+          {% endif %}
+        </td>
+        <td>
+          <span class="status-badge" style="background: rgba(11,25,44,0.06); color: var(--admin-navy-900);">
+            {{ a.category.name_en if a.category else 'General' }}
+          </span>
+        </td>
+        <td>{{ a.author }}</td>
+        <td>
+          <span class="status-badge {{ a.status }} toggle-article-status-btn" data-id="{{ a.id }}" style="cursor: pointer;" title="Click to toggle status">
+            {{ a.status }}
+          </span>
+        </td>
+        <td><strong>{{ a.views }}</strong></td>
+        <td><small>{{ a.created_at.strftime('%b %d, %Y') }}</small></td>
+        <td style="text-align: right;">
+          <div class="table-actions" style="justify-content: flex-end;">
+            <a href="{{ url_for('admin.edit_article', id=a.id) }}" class="admin-btn admin-btn-secondary admin-btn-sm" title="Edit Article">
+              <i class="fas fa-edit"></i>
+            </a>
+            <button type="button" class="admin-btn admin-btn-danger admin-btn-sm open-delete-modal-btn" data-action-url="{{ url_for('admin.delete_article', id=a.id) }}" data-item-name="{{ a.title }}" title="Delete Article">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="8" style="text-align: center; padding: 30px; color: var(--admin-text-muted);">No articles found in database.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- ======================================================================
+     4. RECENT CONTACT MESSAGES
+     ====================================================================== -->
+<div class="card-table-wrap">
+  <div class="table-header-toolbar">
+    <h3 style="font-size: 15px; font-weight: 700; color: var(--admin-text-main); display: flex; align-items: center; gap: 8px;">
+      <i class="fas fa-inbox" style="color: var(--admin-teal);"></i> Latest Reader Messages
+    </h3>
+    <a href="{{ url_for('admin.messages') }}" class="admin-btn admin-btn-secondary admin-btn-sm">
+      All Messages ({{ stats.total_messages }}) <i class="fas fa-arrow-right"></i>
+    </a>
+  </div>
+
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Sender</th>
+        <th>Email</th>
+        <th>Subject</th>
+        <th>Date</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in recent_messages %}
+      <tr>
+        <td><strong>{{ m.name }}</strong></td>
+        <td><a href="mailto:{{ m.email }}" style="color: var(--admin-accent);">{{ m.email }}</a></td>
+        <td>{{ m.subject }}</td>
+        <td><small>{{ m.created_at.strftime('%b %d, %Y %I:%M %p') }}</small></td>
+        <td>
+          <span class="status-badge {% if m.is_read %}published{% else %}draft{% endif %}">
+            {% if m.is_read %}Read{% else %}New / Unread{% endif %}
+          </span>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="5" style="text-align: center; padding: 24px; color: var(--admin-text-muted);">No messages received yet.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  window.categoryChartLabels = {{ category_chart_labels|tojson }};
+  window.categoryChartData = {{ category_chart_data|tojson }};
+  window.statusChartLabels = {{ status_chart_labels|tojson }};
+  window.statusChartData = {{ status_chart_data|tojson }};
+</script>
+{% endblock %}
+

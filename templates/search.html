@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{% if current_lang == 'ta' %}செய்தித் தேடல் முடிவுகள்{% else %}Search Results{% endif %} - {{ settings.get('site_name_ta', 'விதை இயக்கம்') if current_lang == 'ta' else settings.get('site_name_en', 'Vithaigal Iyakkam') }}
+{% endblock %}
+
+{% block content %}
+
+<!-- Search Header Banner -->
+<div class="listing-hero-banner">
+  <div class="container">
+    <div class="listing-hero-inner">
+      <div>
+        <h1 class="listing-hero-title">
+          <i class="fas fa-search" style="color: var(--accent-orange); margin-right: 8px;"></i>
+          {% if current_lang == 'ta' %}செய்தி மற்றும் ஆய்வுக் கட்டுரைகள் தேடல்{% else %}Search Editorial Archives{% endif %}
+        </h1>
+        <p class="listing-hero-desc">
+          {% if query %}
+            {% if current_lang == 'ta' %}
+              "<strong>{{ query }}</strong>" என்ற சொல்லுக்கான தேடல் முடிவுகள் ({% if selected_category %}{{ selected_category.name_ta }}{% else %}அனைத்துப் பிரிவுகள்{% endif %})
+            {% else %}
+              Search results for "<strong>{{ query }}</strong>" in {% if selected_category %}{{ selected_category.name_en }}{% else %}All Categories{% endif %}
+            {% endif %}
+          {% else %}
+            {% if current_lang == 'ta' %}தலைப்பு, முக்கிய சொற்கள் மற்றும் பிரிவுகள் மூலம் செய்திகளைத் தேடுங்கள்.{% else %}Search across all news headlines, tags, summaries, and categories.{% endif %}
+          {% endif %}
+        </p>
+      </div>
+      <div style="background: rgba(255,255,255,0.08); padding: 12px 20px; border-radius: var(--radius-sm); text-align: center;">
+        <span style="font-size: 28px; font-weight: 800; color: #fff; display: block; line-height: 1;">{{ total_count }}</span>
+        <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #cbd5e1;">{% if current_lang == 'ta' %}முடிவுகள்{% else %}Results Found{% endif %}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Search Form & Filters Bar -->
+<div class="filter-toolbar" style="margin-bottom: 30px;">
+  <form action="{{ url_for('public.search') }}" method="GET" style="display: flex; flex-wrap: wrap; gap: 12px; width: 100%;">
+    <!-- Search Query Input -->
+    <div style="flex: 1; min-width: 240px; position: relative;">
+      <input type="text" name="q" value="{{ query }}" placeholder="{% if current_lang == 'ta' %}தேடல் சொற்களை உள்ளிடவும்...{% else %}Enter keywords...{% endif %}" style="width: 100%; padding: 8px 36px 8px 14px; font-size: 13px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--bg-secondary); color: var(--text-primary);">
+      <button type="submit" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: transparent; color: var(--text-muted); cursor: pointer;"><i class="fas fa-search"></i></button>
+    </div>
+
+    <!-- Category Dropdown Filter -->
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <select name="category" class="filter-select" onchange="this.form.submit()">
+        <option value="">{% if current_lang == 'ta' %}அனைத்துப் பிரிவுகள் (All Categories){% else %}All Categories{% endif %}</option>
+        {% for cat in nav_categories %}
+        <option value="{{ cat.slug }}" {% if selected_category and selected_category.slug == cat.slug %}selected{% endif %}>
+          {{ cat.name_ta if current_lang == 'ta' else cat.name_en }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Sort Dropdown Filter -->
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <select name="sort" class="filter-select" onchange="this.form.submit()">
+        <option value="latest" {% if sort_by == 'latest' %}selected{% endif %}>{% if current_lang == 'ta' %}சமீபத்தியவை (Latest){% else %}Latest First{% endif %}</option>
+        <option value="popular" {% if sort_by == 'popular' %}selected{% endif %}>{% if current_lang == 'ta' %}பிரபலமானவை (Popular){% else %}Most Viewed{% endif %}</option>
+        <option value="oldest" {% if sort_by == 'oldest' %}selected{% endif %}>{% if current_lang == 'ta' %}பழையவை (Oldest){% else %}Oldest First{% endif %}</option>
+      </select>
+    </div>
+
+    <button type="submit" class="btn-primary" style="padding: 8px 18px; font-size: 13px;">
+      <i class="fas fa-filter"></i> {% if current_lang == 'ta' %}தேடு{% else %}Filter{% endif %}
+    </button>
+  </form>
+</div>
+
+<!-- Search Results Grid -->
+{% if articles %}
+<div class="articles-grid three-col">
+  {% for art in articles %}
+  <article class="article-card">
+    <div class="card-thumb">
+      {% if art.category %}
+      <a href="{{ url_for('public.category', slug=art.category.slug) }}" class="card-badge badge-top-left">
+        {{ art.category.name_ta if current_lang == 'ta' else art.category.name_en }}
+      </a>
+      {% endif %}
+      <button type="button" class="bookmark-action-btn" data-article-id="{{ art.id }}" title="Bookmark article">
+        <i class="far fa-bookmark"></i>
+      </button>
+      <a href="{{ url_for('public.article', slug=art.slug) }}">
+        <img src="{{ art.display_image }}" alt="{{ art.title }}" loading="lazy" onerror="this.src='/static/images/placeholder.jpg'">
+      </a>
+      {% if art.has_video %}
+      <span class="card-video-badge" title="Includes Video"><i class="fas fa-play"></i></span>
+      {% endif %}
+    </div>
+    <div class="card-body">
+      <h2 class="card-title">
+        <a href="{{ url_for('public.article', slug=art.slug) }}">
+          {{ art.title_ta if (current_lang == 'ta' and art.title_ta) else art.title }}
+        </a>
+      </h2>
+      <p class="card-excerpt">
+        {{ art.summary_ta if (current_lang == 'ta' and art.summary_ta) else art.summary }}
+      </p>
+      <div class="card-footer">
+        <span><i class="far fa-calendar-alt"></i> {{ art.formatted_date_ta if current_lang == 'ta' else art.formatted_date }}</span>
+        <a href="{{ url_for('public.article', slug=art.slug) }}" class="read-more-link">
+          <span>{% if current_lang == 'ta' %}வாசிக்க{% else %}Read More{% endif %}</span>
+          <i class="fas fa-chevron-right" style="font-size: 10px;"></i>
+        </a>
+      </div>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+
+<!-- Pagination Controls -->
+{% if pagination.pages > 1 %}
+<div class="pagination-wrap">
+  {% if pagination.has_prev %}
+  <a href="{{ url_for('public.search', page=pagination.prev_num, q=query, category=(selected_category.slug if selected_category else ''), sort=sort_by) }}" class="page-btn">
+    <i class="fas fa-chevron-left"></i> {% if current_lang == 'ta' %}முந்தையது{% else %}Previous{% endif %}
+  </a>
+  {% endif %}
+
+  {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+    {% if p %}
+      {% if p == pagination.page %}
+      <span class="page-btn active">{{ p }}</span>
+      {% else %}
+      <a href="{{ url_for('public.search', page=p, q=query, category=(selected_category.slug if selected_category else ''), sort=sort_by) }}" class="page-btn">{{ p }}</a>
+      {% endif %}
+    {% else %}
+      <span class="page-btn disabled">...</span>
+    {% endif %}
+  {% endfor %}
+
+  {% if pagination.has_next %}
+  <a href="{{ url_for('public.search', page=pagination.next_num, q=query, category=(selected_category.slug if selected_category else ''), sort=sort_by) }}" class="page-btn">
+    {% if current_lang == 'ta' %}அடுத்தது{% else %}Next{% endif %} <i class="fas fa-chevron-right"></i>
+  </a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div style="background: var(--bg-surface); padding: 50px 20px; border-radius: var(--radius-md); text-align: center; border: 1px dashed var(--border-light); margin: 30px 0;">
+  <i class="fas fa-search-minus" style="font-size: 48px; color: var(--text-muted); margin-bottom: 16px;"></i>
+  <h3 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">
+    {% if current_lang == 'ta' %}தேடல் முடிவுகள் எதுவும் கிடைக்கவில்லை{% else %}No search results found{% endif %}
+  </h3>
+  <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 24px;">
+    {% if current_lang == 'ta' %}
+      தயவுசெய்து எழுத்துப்பிழைகளை சரிபார்த்து அல்லது வேறு சொற்களைக் கொண்டு மீண்டும் முயலவும்.
+    {% else %}
+      Please check for spelling errors, try alternative search keywords, or clear category filters.
+    {% endif %}
+  </p>
+  <a href="{{ url_for('public.index') }}" class="btn-primary">
+    <i class="fas fa-home"></i> {% if current_lang == 'ta' %}முகப்புக்குச் செல்{% else %}Return to Homepage{% endif %}
+  </a>
+</div>
+{% endif %}
+
+{% endblock %}
+

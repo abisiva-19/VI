@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{% if current_lang == 'ta' %}பிடித்த கட்டுரைகள்{% else %}Saved Bookmarks{% endif %} - {{ settings.get('site_name_ta', 'விதை இயக்கம்') if current_lang == 'ta' else settings.get('site_name_en', 'Vithaigal Iyakkam') }}
+{% endblock %}
+
+{% block content %}
+
+<!-- Bookmarks Hero Banner -->
+<div class="listing-hero-banner">
+  <div class="container">
+    <div class="listing-hero-inner">
+      <div>
+        <h1 class="listing-hero-title">
+          <i class="fas fa-bookmark" style="color: var(--accent-orange); margin-right: 8px;"></i>
+          {% if current_lang == 'ta' %}நீங்கள் சேமித்து வைத்த கட்டுரைகள்{% else %}Your Saved Reading List{% endif %}
+        </h1>
+        <p class="listing-hero-desc">
+          {% if current_lang == 'ta' %}
+            நீங்கள் பின்னர் வாசிப்பதற்காக புக்மார்க் செய்து வைத்துள்ள அனைத்து முக்கிய செய்திகள் மற்றும் கட்டுரைகளின் தொகுப்பு.
+          {% else %}
+            Access your curated collection of bookmarked articles for offline reading or future reference.
+          {% endif %}
+        </p>
+      </div>
+      <div style="background: rgba(255,255,255,0.08); padding: 12px 20px; border-radius: var(--radius-sm); text-align: center;">
+        <span style="font-size: 28px; font-weight: 800; color: #fff; display: block; line-height: 1;">{{ articles|length }}</span>
+        <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #cbd5e1;">{% if current_lang == 'ta' %}சேமிக்கப்பட்டவை{% else %}Saved Items{% endif %}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if articles %}
+<div class="articles-grid three-col">
+  {% for art in articles %}
+  <article class="article-card">
+    <div class="card-thumb">
+      {% if art.category %}
+      <a href="{{ url_for('public.category', slug=art.category.slug) }}" class="card-badge badge-top-left">
+        {{ art.category.name_ta if current_lang == 'ta' else art.category.name_en }}
+      </a>
+      {% endif %}
+      <!-- Bookmark Active Button to remove -->
+      <button type="button" class="bookmark-action-btn active" data-article-id="{{ art.id }}" title="Remove from bookmarks">
+        <i class="fas fa-bookmark"></i>
+      </button>
+      <a href="{{ url_for('public.article', slug=art.slug) }}">
+        <img src="{{ art.display_image }}" alt="{{ art.title }}" loading="lazy" onerror="this.src='/static/images/placeholder.jpg'">
+      </a>
+      {% if art.has_video %}
+      <span class="card-video-badge" title="Includes Video"><i class="fas fa-play"></i></span>
+      {% endif %}
+    </div>
+    <div class="card-body">
+      <h2 class="card-title">
+        <a href="{{ url_for('public.article', slug=art.slug) }}">
+          {{ art.title_ta if (current_lang == 'ta' and art.title_ta) else art.title }}
+        </a>
+      </h2>
+      <p class="card-excerpt">
+        {{ art.summary_ta if (current_lang == 'ta' and art.summary_ta) else art.summary }}
+      </p>
+      <div class="card-footer">
+        <span><i class="far fa-calendar-alt"></i> {{ art.formatted_date_ta if current_lang == 'ta' else art.formatted_date }}</span>
+        <a href="{{ url_for('public.article', slug=art.slug) }}" class="read-more-link">
+          <span>{% if current_lang == 'ta' %}வாசிக்க{% else %}Read Story{% endif %}</span>
+          <i class="fas fa-chevron-right" style="font-size: 10px;"></i>
+        </a>
+      </div>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<div style="background: var(--bg-surface); padding: 50px 20px; border-radius: var(--radius-md); text-align: center; border: 1px dashed var(--border-light); margin: 30px 0;">
+  <i class="far fa-bookmark" style="font-size: 48px; color: var(--text-muted); margin-bottom: 16px;"></i>
+  <h3 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">
+    {% if current_lang == 'ta' %}சேமிக்கப்பட்ட கட்டுரைகள் எதுவும் இல்லை{% else %}No saved articles yet{% endif %}
+  </h3>
+  <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 24px;">
+    {% if current_lang == 'ta' %}
+      செய்திப் பக்கங்களில் உள்ள புக்மார்க் (<i class="far fa-bookmark"></i>) பொத்தானை அழுத்துவதன் மூலம் கட்டுரைகளை எளிதாக இங்கே சேமிக்கலாம்.
+    {% else %}
+      Click the bookmark icon (<i class="far fa-bookmark"></i>) on any article card to save it here for quick access later.
+    {% endif %}
+  </p>
+  <a href="{{ url_for('public.index') }}" class="btn-primary">
+    <i class="fas fa-compass"></i> {% if current_lang == 'ta' %}செய்திகளை உலாவவும்{% else %}Explore News Articles{% endif %}
+  </a>
+</div>
+{% endif %}
+
+{% endblock %}
+

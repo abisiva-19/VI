@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{{ category.name_ta if current_lang == 'ta' else category.name_en }} - {{ settings.get('site_name_ta', 'விதை இயக்கம்') if current_lang == 'ta' else settings.get('site_name_en', 'Vithaigal Iyakkam') }}
+{% endblock %}
+
+{% block content %}
+
+<!-- Category Hero Banner -->
+<div class="listing-hero-banner">
+  <div class="container">
+    <div class="listing-hero-inner">
+      <div>
+        <div class="breadcrumb" style="color: #94a3b8; margin-bottom: 8px;">
+          <a href="{{ url_for('public.index') }}" style="color: #cbd5e1;"><i class="fas fa-home"></i></a>
+          <span>/</span>
+          <span>{% if current_lang == 'ta' %}செய்திப் பிரிவு{% else %}Category{% endif %}</span>
+          <span>/</span>
+          <span style="color: #ffb74d;">{{ category.name_ta if current_lang == 'ta' else category.name_en }}</span>
+        </div>
+        <h1 class="listing-hero-title">
+          <i class="fas fa-{{ category.icon or 'newspaper' }}" style="color: var(--accent-orange); margin-right: 8px;"></i>
+          {{ category.name_ta if current_lang == 'ta' else category.name_en }}
+        </h1>
+        <p class="listing-hero-desc">
+          {{ category.description_ta if current_lang == 'ta' else category.description_en }}
+        </p>
+      </div>
+      <div style="background: rgba(255,255,255,0.08); padding: 12px 20px; border-radius: var(--radius-sm); text-align: center;">
+        <span style="font-size: 28px; font-weight: 800; color: #fff; display: block; line-height: 1;">{{ pagination.total }}</span>
+        <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #cbd5e1;">{% if current_lang == 'ta' %}கட்டுரைகள்{% else %}Articles{% endif %}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Content Grid -->
+<div class="main-content-layout">
+  <div class="main-stream">
+    
+    <!-- Filter Toolbar -->
+    <div class="filter-toolbar">
+      <!-- Search within this category -->
+      <form action="{{ url_for('public.category', slug=category.slug) }}" method="GET" class="filter-group">
+        <input type="hidden" name="sort" value="{{ sort_by }}">
+        <div style="position: relative; display: flex; align-items: center;">
+          <input type="text" name="q" value="{{ search_query }}" placeholder="{% if current_lang == 'ta' %}இப்பிரிவில் தேடுக...{% else %}Search in this section...{% endif %}" style="padding: 6px 30px 6px 12px; font-size: 13px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--bg-secondary); color: var(--text-primary); width: 220px;">
+          <button type="submit" style="position: absolute; right: 8px; background: transparent; color: var(--text-muted); cursor: pointer;"><i class="fas fa-search"></i></button>
+        </div>
+      </form>
+
+      <!-- Sort Filter -->
+      <form action="{{ url_for('public.category', slug=category.slug) }}" method="GET" class="filter-group">
+        {% if search_query %}
+        <input type="hidden" name="q" value="{{ search_query }}">
+        {% endif %}
+        <label for="sort-select" style="font-size: 13px; color: var(--text-muted); font-weight: 500;">
+          <i class="fas fa-sort-amount-down"></i> {% if current_lang == 'ta' %}வரிசைப்படுத்து:{% else %}Sort by:{% endif %}
+        </label>
+        <select name="sort" id="sort-select" class="filter-select" onchange="this.form.submit()">
+          <option value="latest" {% if sort_by == 'latest' %}selected{% endif %}>{% if current_lang == 'ta' %}சமீபத்தியவை (Latest){% else %}Latest First{% endif %}</option>
+          <option value="popular" {% if sort_by == 'popular' %}selected{% endif %}>{% if current_lang == 'ta' %}பிரபலமானவை (Most Viewed){% else %}Most Viewed{% endif %}</option>
+          <option value="oldest" {% if sort_by == 'oldest' %}selected{% endif %}>{% if current_lang == 'ta' %}பழையவை (Oldest){% else %}Oldest First{% endif %}</option>
+        </select>
+      </form>
+    </div>
+
+    <!-- Article Listing Grid -->
+    {% if articles %}
+    <div class="articles-grid">
+      {% for art in articles %}
+      <article class="article-card">
+        <div class="card-thumb">
+          <button type="button" class="bookmark-action-btn" data-article-id="{{ art.id }}" title="Bookmark article">
+            <i class="far fa-bookmark"></i>
+          </button>
+          <a href="{{ url_for('public.article', slug=art.slug) }}">
+            <img src="{{ art.display_image }}" alt="{{ art.title }}" loading="lazy" onerror="this.src='/static/images/placeholder.jpg'">
+          </a>
+          {% if art.has_video %}
+          <span class="card-video-badge" title="Includes Video"><i class="fas fa-play"></i></span>
+          {% endif %}
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">
+            <a href="{{ url_for('public.article', slug=art.slug) }}">
+              {{ art.title_ta if (current_lang == 'ta' and art.title_ta) else art.title }}
+            </a>
+          </h2>
+          <p class="card-excerpt">
+            {{ art.summary_ta if (current_lang == 'ta' and art.summary_ta) else art.summary }}
+          </p>
+          <div class="card-footer">
+            <span><i class="far fa-calendar-alt"></i> {{ art.formatted_date_ta if current_lang == 'ta' else art.formatted_date }}</span>
+            <a href="{{ url_for('public.article', slug=art.slug) }}" class="read-more-link">
+              <span>{% if current_lang == 'ta' %}முழுதும் வாசிக்க{% else %}Read More{% endif %}</span>
+              <i class="fas fa-chevron-right" style="font-size: 10px;"></i>
+            </a>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+
+    <!-- Pagination Controls -->
+    {% if pagination.pages > 1 %}
+    <div class="pagination-wrap">
+      {% if pagination.has_prev %}
+      <a href="{{ url_for('public.category', slug=category.slug, page=pagination.prev_num, sort=sort_by, q=search_query) }}" class="page-btn">
+        <i class="fas fa-chevron-left"></i> {% if current_lang == 'ta' %}முந்தையது{% else %}Previous{% endif %}
+      </a>
+      {% endif %}
+
+      {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+        {% if p %}
+          {% if p == pagination.page %}
+          <span class="page-btn active">{{ p }}</span>
+          {% else %}
+          <a href="{{ url_for('public.category', slug=category.slug, page=p, sort=sort_by, q=search_query) }}" class="page-btn">{{ p }}</a>
+          {% endif %}
+        {% else %}
+          <span class="page-btn disabled">...</span>
+        {% endif %}
+      {% endfor %}
+
+      {% if pagination.has_next %}
+      <a href="{{ url_for('public.category', slug=category.slug, page=pagination.next_num, sort=sort_by, q=search_query) }}" class="page-btn">
+        {% if current_lang == 'ta' %}அடுத்தது{% else %}Next{% endif %} <i class="fas fa-chevron-right"></i>
+      </a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div style="background: var(--bg-surface); padding: 48px; border-radius: var(--radius-md); text-align: center; border: 1px dashed var(--border-light);">
+      <i class="fas fa-folder-open" style="font-size: 48px; color: var(--text-muted); margin-bottom: 16px;"></i>
+      <h3 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">
+        {% if current_lang == 'ta' %}இப்பிரிவில் கட்டுரைகள் எதுவும் கிடைக்கவில்லை{% else %}No articles found in this category{% endif %}
+      </h3>
+      <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 20px;">
+        {% if current_lang == 'ta' %}வேறு வார்த்தைகளைத் தேடிப் பாருங்கள் அல்லது முகப்புக்குச் செல்லுங்கள்.{% else %}Try searching with different keywords or browse other sections.{% endif %}
+      </p>
+      <a href="{{ url_for('public.index') }}" class="btn-primary">
+        <i class="fas fa-home"></i> {% if current_lang == 'ta' %}முகப்புக்குச் செல்{% else %}Go to Homepage{% endif %}
+      </a>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <!-- Trending in Category -->
+    <div class="sidebar-widget">
+      <h3 class="widget-title">
+        <i class="fas fa-fire"></i>
+        <span>{% if current_lang == 'ta' %}இப்பிரிவின் பிரபல செய்திகள்{% else %}Trending in {{ category.name_en }}{% endif %}</span>
+      </h3>
+      <div class="ranked-list">
+        {% for art in trending_articles %}
+        <div class="ranked-item">
+          <div class="rank-number">0{{ loop.index }}</div>
+          <div class="ranked-info">
+            <h4 class="ranked-title">
+              <a href="{{ url_for('public.article', slug=art.slug) }}">
+                {{ art.title_ta if (current_lang == 'ta' and art.title_ta) else art.title }}
+              </a>
+            </h4>
+            <div class="ranked-meta">
+              <span><i class="far fa-eye"></i> {{ art.views }}</span>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Other Categories -->
+    <div class="sidebar-widget">
+      <h3 class="widget-title">
+        <i class="fas fa-layer-group"></i>
+        <span>{% if current_lang == 'ta' %}பிற செய்திப் பிரிவுகள்{% else %}Other Categories{% endif %}</span>
+      </h3>
+      <div class="category-pills-list">
+        {% for cat in nav_categories %}
+        {% if cat.id != category.id %}
+        <a href="{{ url_for('public.category', slug=cat.slug) }}" class="cat-pill">
+          <span>{{ cat.name_ta if current_lang == 'ta' else cat.name_en }}</span>
+          <span class="pill-count">({{ cat.article_count }})</span>
+        </a>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </aside>
+</div>
+
+{% endblock %}

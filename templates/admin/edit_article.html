@@ -1,0 +1,211 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}Edit Article - {{ article.title }}{% endblock %}
+{% block page_title %}Edit Article{% endblock %}
+
+{% block admin_content %}
+
+<div class="form-card">
+  <form action="{{ url_for('admin.edit_article', id=article.id) }}" method="POST" enctype="multipart/form-data">
+    
+    <!-- Title Fields -->
+    <div class="form-grid-2">
+      <div class="form-group-admin">
+        <label for="title">Article Title (English) *</label>
+        <input type="text" name="title" id="title" class="admin-input" required value="{{ article.title }}">
+      </div>
+
+      <div class="form-group-admin">
+        <label for="title_ta">Article Title (Tamil / தமிழ்)</label>
+        <input type="text" name="title_ta" id="title_ta" class="admin-input" value="{{ article.title_ta or '' }}">
+      </div>
+    </div>
+
+    <!-- Slug & Category -->
+    <div class="form-grid-2">
+      <div class="form-group-admin">
+        <label for="slug">SEO Friendly Slug</label>
+        <input type="text" name="slug" id="slug" class="admin-input" value="{{ article.slug }}">
+        <div class="help-text">Live URL: <code>/article/{{ article.slug }}</code></div>
+      </div>
+
+      <div class="form-group-admin">
+        <label for="category_id">Category *</label>
+        <select name="category_id" id="category_id" class="admin-select" required>
+          <option value="">Select News Category...</option>
+          {% for c in categories %}
+          <option value="{{ c.id }}" {% if article.category_id == c.id %}selected{% endif %}>{{ c.name_en }} ({{ c.name_ta }})</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <!-- Authors -->
+    <div class="form-grid-2">
+      <div class="form-group-admin">
+        <label for="author">Author (English)</label>
+        <input type="text" name="author" id="author" class="admin-input" value="{{ article.author or '' }}">
+      </div>
+
+      <div class="form-group-admin">
+        <label for="author_ta">Author (Tamil / தமிழ்)</label>
+        <input type="text" name="author_ta" id="author_ta" class="admin-input" value="{{ article.author_ta or '' }}">
+      </div>
+    </div>
+
+    <!-- Featured Image Replacement & Preview Section -->
+    <div class="form-group-admin">
+      <label>Current Featured Image & Replacement</label>
+      <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 16px;">
+        <img src="{{ article.featured_image or url_for('static', filename='images/placeholder.jpg') }}" alt="" style="width: 120px; height: 80px; object-fit: cover; border-radius: var(--admin-radius); border: 1px solid var(--admin-border);">
+        <div>
+          <span style="font-size: 13px; font-weight: 600; display: block;">Current Image Path:</span>
+          <code style="font-size: 11px; color: var(--admin-text-muted);">{{ article.featured_image }}</code>
+        </div>
+      </div>
+
+      <div class="image-upload-dropzone" id="image-dropzone">
+        <i class="fas fa-cloud-upload-alt" style="font-size: 32px; color: var(--admin-accent); margin-bottom: 8px;"></i>
+        <p style="font-size: 13px; font-weight: 600; color: var(--admin-text-main);">Click or drag & drop to replace with a new image</p>
+        <input type="file" name="featured_image" id="featured_image" accept="image/*" style="display: none;">
+        <img id="image-preview" class="dropzone-preview" alt="Image preview">
+      </div>
+      <div id="file-size-warning" style="display: none; color: #ef4444; font-size: 12px; margin-top: 4px;">File exceeds 5MB limit!</div>
+
+      <div style="margin-top: 10px;">
+        <label for="image_url" style="font-size: 12px; color: var(--admin-text-muted);">Or update External Image URL:</label>
+        <input type="url" name="image_url" id="image_url" class="admin-input" placeholder="https://..." value="{{ article.featured_image if article.featured_image.startswith('http') else '' }}">
+      </div>
+    </div>
+
+    <!-- Video URL & Tags -->
+    <div class="form-grid-2">
+      <div class="form-group-admin">
+        <label for="video_url">
+          <i class="fab fa-youtube" style="color: #ef4444; margin-right: 4px;"></i> Video URL / YouTube Link (Optional)
+        </label>
+        <div style="position: relative;">
+          <input type="text" name="video_url" id="video_url" class="admin-input" 
+                 placeholder="Copy & paste video link (e.g., https://youtu.be/... or youtube.com/watch?v=... or Shorts)..."
+                 value="{{ article.video_url or '' }}"
+                 autocomplete="off">
+        </div>
+        <div class="help-text">
+          <i class="fas fa-info-circle"></i> Paste any YouTube link (standard video, Shorts, share link, or mobile). The video player and thumbnail will be automatically attached!
+        </div>
+
+        <!-- Live Instant Video Preview Box -->
+        <div id="video-preview-wrapper" class="video-preview-wrapper" style="display: none; margin-top: 12px;">
+          <div class="video-preview-header">
+            <span style="color: #10b981; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="fas fa-check-circle"></i> <strong id="video-detected-label">YouTube Video Ready</strong>
+            </span>
+            <button type="button" id="use-video-thumb-btn" class="admin-btn admin-btn-secondary admin-btn-sm" style="font-size: 11px; padding: 4px 8px;">
+              <i class="fas fa-image"></i> Use as Featured Image
+            </button>
+          </div>
+          <div class="video-preview-iframe-box">
+            <iframe id="admin-video-iframe" src="" allowfullscreen title="Video preview"></iframe>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group-admin">
+        <label for="tags">Keywords / Tags</label>
+        <input type="text" name="tags" id="tags" class="admin-input" value="{{ article.tags or '' }}">
+        <div class="help-text">Comma-separated tags for SEO & search.</div>
+      </div>
+    </div>
+
+    <!-- Summaries with Add Summary Dynamic Feature -->
+    <div id="summaries-container" class="dynamic-blocks-container">
+      <div class="dynamic-block-item" data-index="1">
+        <div class="dynamic-block-header">
+          <span class="dynamic-block-title">
+            <i class="fas fa-align-left" style="color: var(--accent-orange);"></i>
+            {% if current_lang == 'ta' %}சுருக்கப் பகுதி #1{% else %}Short Summary / Excerpt #1{% endif %}
+          </span>
+        </div>
+
+        <div class="form-group-admin">
+          <label for="summary">Short Summary / Excerpt (English) *</label>
+          <textarea name="summary" id="summary" class="admin-textarea" style="min-height: 80px;" required>{{ article.summary }}</textarea>
+        </div>
+
+        <div class="form-group-admin">
+          <label for="summary_ta">Short Summary / Excerpt (Tamil / தமிழ்)</label>
+          <textarea name="summary_ta" id="summary_ta" class="admin-textarea" style="min-height: 80px;">{{ article.summary_ta or '' }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="dynamic-action-row">
+      <button type="button" class="dynamic-action-btn" id="add-summary-btn">
+        <i class="fas fa-plus"></i> Add Summary
+      </button>
+    </div>
+
+    <!-- Content with Add Content Dynamic Feature -->
+    <div id="contents-container" class="dynamic-blocks-container">
+      <div class="dynamic-block-item" data-index="1">
+        <div class="dynamic-block-header">
+          <span class="dynamic-block-title">
+            <i class="fas fa-paragraph" style="color: var(--accent-orange);"></i>
+            {% if current_lang == 'ta' %}கட்டுரைப் பகுதி #1{% else %}Full Article Content #1{% endif %}
+          </span>
+        </div>
+
+        <div class="form-group-admin">
+          <label for="content">Full Article Content (HTML / Text) *</label>
+          <textarea name="content" id="content" class="admin-textarea" style="min-height: 220px;" required>{{ article.content }}</textarea>
+        </div>
+
+        <div class="form-group-admin">
+          <label for="content_ta">Full Article Content (Tamil / தமிழ்)</label>
+          <textarea name="content_ta" id="content_ta" class="admin-textarea" style="min-height: 220px;">{{ article.content_ta or '' }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="dynamic-action-row">
+      <button type="button" class="dynamic-action-btn" id="add-content-btn">
+        <i class="fas fa-plus"></i> Add Content
+      </button>
+    </div>
+
+    <!-- Status & Featured Toggles -->
+    <div class="form-grid-2" style="align-items: center; background: var(--admin-bg); padding: 16px; border-radius: var(--admin-radius); margin-bottom: 24px;">
+      <div class="form-group-admin" style="margin-bottom: 0;">
+        <label for="status">Publication Status</label>
+        <select name="status" id="status" class="admin-select">
+          <option value="published" {% if article.status == 'published' %}selected{% endif %}>Published</option>
+          <option value="draft" {% if article.status == 'draft' %}selected{% endif %}>Draft</option>
+          <option value="scheduled" {% if article.status == 'scheduled' %}selected{% endif %}>Scheduled</option>
+        </select>
+      </div>
+
+      <div style="display: flex; gap: 20px;">
+        <label class="switch-label">
+          <input type="checkbox" name="is_featured" value="1" {% if article.is_featured %}checked{% endif %}>
+          <span>Featured Headline</span>
+        </label>
+        <label class="switch-label">
+          <input type="checkbox" name="is_trending" value="1" {% if article.is_trending %}checked{% endif %}>
+          <span>Mark as Trending</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <a href="{{ url_for('admin.articles') }}" class="admin-btn admin-btn-secondary">Cancel</a>
+      <button type="submit" class="admin-btn admin-btn-primary">
+        <i class="fas fa-save"></i> Save Changes
+      </button>
+    </div>
+
+  </form>
+</div>
+
+{% endblock %}
+

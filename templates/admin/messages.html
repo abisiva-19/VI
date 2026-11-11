@@ -1,0 +1,312 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}Reader Messages{% endblock %}
+{% block page_title %}Reader Messages & Inquiries{% endblock %}
+
+{% block admin_content %}
+
+<!-- ======================================================================
+     1. MESSAGES HEADER BAR (Title, Counter Badge & Navigation CTA)
+     ====================================================================== -->
+<div class="articles-header-bar">
+  <div>
+    <h2 class="section-title">
+      <i class="fas fa-inbox" style="color: var(--accent-orange);"></i> Reader Messages
+      <span class="tab-badge" style="background: rgba(255, 87, 34, 0.12); color: var(--accent-orange); font-size: 13px;">{{ total_count }}</span>
+      {% if unread_count > 0 %}
+      <span class="tab-badge" style="background: #fef3c7; color: #92400e; font-size: 12px; margin-left: 6px;">{{ unread_count }} New</span>
+      {% endif %}
+    </h2>
+    <p class="section-subtitle">Review, reply, archive, and manage reader inquiries, editorial feedback, and contact submissions.</p>
+  </div>
+
+  <div style="display: flex; gap: 10px; align-items: center;">
+    <a href="{{ url_for('admin.subscribers') }}" class="admin-btn admin-btn-outline" title="View Newsletter Subscribers">
+      <i class="fas fa-envelope-open-text"></i> Newsletter Subscribers
+    </a>
+  </div>
+</div>
+
+<!-- ======================================================================
+     2. QUICK STATUS TABS (All Messages, Unread, Read)
+     ====================================================================== -->
+<div class="article-status-tabs">
+  <a href="{{ url_for('admin.messages', q=search_query) }}" 
+     class="status-tab-item {% if not selected_status %}active{% endif %}">
+    <i class="fas fa-layer-group"></i> All Messages
+    <span class="tab-badge">{{ total_count }}</span>
+  </a>
+
+  <a href="{{ url_for('admin.messages', status='unread', q=search_query) }}" 
+     class="status-tab-item {% if selected_status == 'unread' %}active{% endif %}">
+    <i class="fas fa-envelope" style="color: #f59e0b;"></i> New / Unread
+    <span class="tab-badge">{{ unread_count }}</span>
+  </a>
+
+  <a href="{{ url_for('admin.messages', status='read', q=search_query) }}" 
+     class="status-tab-item {% if selected_status == 'read' %}active{% endif %}">
+    <i class="fas fa-check-double" style="color: #10b981;"></i> Read / Handled
+    <span class="tab-badge">{{ read_count }}</span>
+  </a>
+</div>
+
+<!-- ======================================================================
+     3. TABLE CARD & TOOLBAR (Search, Status Filter & Table)
+     ====================================================================== -->
+<div class="card-table-wrap">
+  <!-- Clean Aligned Toolbar -->
+  <div class="articles-toolbar">
+    <form action="{{ url_for('admin.messages') }}" method="GET" class="articles-filter-form">
+      {% if selected_status %}
+      <input type="hidden" name="status" value="{{ selected_status }}">
+      {% endif %}
+
+      <!-- Search Input with Magnifier Icon -->
+      <div class="search-input-wrap">
+        <i class="fas fa-search"></i>
+        <input type="text" name="q" value="{{ search_query }}" 
+               placeholder="Search reader name, email, subject, message..." 
+               class="admin-input table-search-input">
+      </div>
+
+      <!-- Quick Status Dropdown -->
+      <select name="status" class="admin-select toolbar-select" onchange="this.form.submit()">
+        <option value="" {% if not selected_status %}selected{% endif %}>All Messages ({{ total_count }})</option>
+        <option value="unread" {% if selected_status == 'unread' %}selected{% endif %}>Unread Only ({{ unread_count }})</option>
+        <option value="read" {% if selected_status == 'read' %}selected{% endif %}>Read Only ({{ read_count }})</option>
+      </select>
+
+      <button type="submit" class="admin-btn admin-btn-secondary toolbar-btn">
+        <i class="fas fa-filter"></i> Filter
+      </button>
+
+      {% if search_query or selected_status %}
+      <a href="{{ url_for('admin.messages') }}" class="admin-btn admin-btn-outline toolbar-btn" title="Reset all filters">
+        <i class="fas fa-times"></i> Reset
+      </a>
+      {% endif %}
+    </form>
+
+    <div style="font-size: 12.5px; color: var(--admin-text-muted); white-space: nowrap;">
+      Showing <strong>{{ messages|length }}</strong> of <strong>{{ pagination.total }}</strong>
+    </div>
+  </div>
+
+  <!-- Responsive Table with Explicit Column Widths -->
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th style="width: 140px; text-align: center;">Date & Time</th>
+        <th style="width: 220px;">Sender</th>
+        <th style="min-width: 320px;">Subject & Inquiry Message</th>
+        <th style="width: 130px; text-align: center;">Status</th>
+        <th style="width: 130px; text-align: right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in messages %}
+      <tr>
+        <!-- Date & Time -->
+        <td style="text-align: center; white-space: nowrap;">
+          <div class="message-date-meta">
+            <strong>{{ m.created_at.strftime('%b %d, %Y') }}</strong>
+            <small><i class="far fa-clock"></i> {{ m.created_at.strftime('%I:%M %p') }}</small>
+          </div>
+        </td>
+
+        <!-- Sender with Avatar Initials & Email -->
+        <td>
+          <div class="message-sender-cell">
+            <div class="sender-avatar-badge">
+              {{ m.name[:1]|upper if m.name else '?' }}
+            </div>
+            <div class="sender-info-box">
+              <div class="sender-name-text">{{ m.name }}</div>
+              <a href="mailto:{{ m.email }}?subject=Re: {{ m.subject|urlencode }}" class="sender-email-link" title="{{ m.email }}">
+                <i class="fas fa-envelope" style="font-size: 10px;"></i> {{ m.email }}
+              </a>
+            </div>
+          </div>
+        </td>
+
+        <!-- Subject & Inquiry Bubble -->
+        <td>
+          <div class="message-subject-line">
+            <i class="fas fa-comment-dots" style="color: var(--accent-orange); font-size: 12px;"></i>
+            <span>{{ m.subject }}</span>
+          </div>
+          <div class="message-bubble-card">
+            {{ m.message }}
+          </div>
+        </td>
+
+        <!-- Status Badge with Instant AJAX Toggle -->
+        <td style="text-align: center;">
+          <button type="button" 
+                  class="status-badge {% if m.is_read %}published{% else %}draft{% endif %} toggle-message-read-btn" 
+                  data-id="{{ m.id }}" 
+                  title="Click to toggle read / unread status">
+            {% if m.is_read %}
+            <i class="fas fa-check-double"></i> Read
+            {% else %}
+            <i class="fas fa-envelope"></i> New / Unread
+            {% endif %}
+          </button>
+        </td>
+
+        <!-- Uniform 34x34px Action Buttons -->
+        <td style="text-align: right;">
+          <div class="table-actions" style="justify-content: flex-end;">
+            <!-- View Message Modal Button -->
+            <button type="button" 
+                    class="table-action-btn view-btn open-view-message-modal-btn" 
+                    data-id="{{ m.id }}" 
+                    data-name="{{ m.name|e }}" 
+                    data-email="{{ m.email|e }}" 
+                    data-date="{{ m.created_at.strftime('%B %d, %Y at %I:%M %p') }}" 
+                    data-subject="{{ m.subject|e }}" 
+                    data-message="{{ m.message|e }}" 
+                    data-read="{% if m.is_read %}true{% else %}false{% endif %}" 
+                    title="View Full Inquiry">
+              <i class="fas fa-eye"></i>
+            </button>
+
+            <!-- Reply by Email -->
+            <a href="mailto:{{ m.email }}?subject=Re: {{ m.subject|urlencode }}" 
+               class="table-action-btn edit-btn" 
+               title="Reply via Email">
+              <i class="fas fa-reply"></i>
+            </a>
+
+            <!-- Delete Message Button -->
+            <button type="button" 
+                    class="table-action-btn delete-btn open-delete-modal-btn" 
+                    data-action-url="{{ url_for('admin.delete_message', id=m.id) }}" 
+                    data-item-name="message from '{{ m.name|e }}'" 
+                    title="Delete Message">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="5" style="text-align: center; padding: 48px 20px;">
+          <div style="max-width: 380px; margin: 0 auto; color: var(--admin-text-muted);">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(255, 87, 34, 0.1); color: var(--accent-orange); display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 16px;">
+              <i class="fas fa-inbox"></i>
+            </div>
+            <h4 style="font-size: 15px; font-weight: 700; color: var(--admin-text-main); margin-bottom: 6px;">No Reader Messages Found</h4>
+            <p style="font-size: 13px; line-height: 1.5; margin-bottom: 16px;">
+              {% if search_query or selected_status %}
+              No reader inquiries match your active filter criteria. Try resetting the filters.
+              {% else %}
+              Your inbox is clear. Reader inquiries and contact form submissions will appear here.
+              {% endif %}
+            </p>
+            {% if search_query or selected_status %}
+            <a href="{{ url_for('admin.messages') }}" class="admin-btn admin-btn-secondary admin-btn-sm">
+              <i class="fas fa-times"></i> Clear Filters
+            </a>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Aligned Pagination Footer -->
+  {% if pagination.pages > 1 %}
+  <div class="table-pagination-footer">
+    <span style="font-size: 13px; color: var(--admin-text-muted);">
+      Page <strong>{{ pagination.page }}</strong> of <strong>{{ pagination.pages }}</strong> ({{ pagination.total }} total messages)
+    </span>
+    <div style="display: flex; gap: 6px;">
+      {% if pagination.has_prev %}
+      <a href="{{ url_for('admin.messages', page=pagination.prev_num, q=search_query, status=selected_status) }}" 
+         class="admin-btn admin-btn-secondary admin-btn-sm">
+        <i class="fas fa-chevron-left"></i> Prev
+      </a>
+      {% endif %}
+      {% if pagination.has_next %}
+      <a href="{{ url_for('admin.messages', page=pagination.next_num, q=search_query, status=selected_status) }}" 
+         class="admin-btn admin-btn-secondary admin-btn-sm">
+        Next <i class="fas fa-chevron-right"></i>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ======================================================================
+     4. VIEW MESSAGE DETAILS MODAL (Pure Vanilla JS)
+     ====================================================================== -->
+<div id="view-message-modal" class="admin-modal-backdrop">
+  <div class="modal-card modal-view-message-card">
+    <!-- Modal Header -->
+    <div class="modal-header-row">
+      <h3>
+        <i class="fas fa-envelope-open" style="color: var(--accent-orange);"></i> Reader Inquiry Details
+      </h3>
+      <button type="button" class="modal-close-icon-btn close-view-message-modal-btn" title="Close dialog">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Sender Meta Grid -->
+    <div class="view-message-meta-grid">
+      <div class="view-message-meta-item">
+        <label><i class="fas fa-user"></i> Sender Name</label>
+        <span id="view-modal-sender">—</span>
+      </div>
+      <div class="view-message-meta-item">
+        <label><i class="fas fa-at"></i> Email Address</label>
+        <a id="view-modal-email" href="#" target="_blank" style="color: var(--accent-orange); text-decoration: none;">—</a>
+      </div>
+      <div class="view-message-meta-item">
+        <label><i class="far fa-calendar-alt"></i> Received On</label>
+        <span id="view-modal-date">—</span>
+      </div>
+      <div class="view-message-meta-item">
+        <label><i class="fas fa-shield-alt"></i> Channel</label>
+        <span>Public Contact Form</span>
+      </div>
+    </div>
+
+    <!-- Subject Banner -->
+    <div class="view-message-subject-banner">
+      <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--accent-orange); display: block; margin-bottom: 4px;">
+        Subject
+      </label>
+      <h4 id="view-modal-subject">—</h4>
+    </div>
+
+    <!-- Message Body Container -->
+    <div class="form-group-admin" style="margin-bottom: 22px;">
+      <label style="font-size: 12px; font-weight: 700; color: var(--admin-text-main); margin-bottom: 6px; display: block;">
+        <i class="fas fa-align-left" style="color: var(--admin-teal);"></i> Message Content
+      </label>
+      <div id="view-modal-body" class="view-message-body-wrap">—</div>
+    </div>
+
+    <!-- Modal Footer Actions -->
+    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--admin-border); padding-top: 18px; flex-wrap: wrap; gap: 10px;">
+      <button type="button" id="view-modal-mark-toggle-btn" class="admin-btn admin-btn-secondary admin-btn-sm" data-id="">
+        <i class="fas fa-check-double"></i> Mark as Read
+      </button>
+
+      <div style="display: flex; gap: 8px;">
+        <button type="button" class="admin-btn admin-btn-outline admin-btn-sm close-view-message-modal-btn">
+          Close
+        </button>
+        <a id="view-modal-reply-btn" href="#" class="admin-btn admin-btn-primary admin-btn-sm" target="_blank">
+          <i class="fas fa-reply"></i> Reply via Email
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

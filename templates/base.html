@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{{ settings.get('site_name_ta', 'விதைகள் இயக்கம்') if current_lang == 'ta' else settings.get('site_name_en', 'Vithaigal Iyakkam') }}{% endblock %} - {{ settings.get('site_tagline_ta', 'உண்மை மற்றும் சமூக முன்னேற்றத்திற்கான செய்தித் தளம்') if current_lang == 'ta' else settings.get('site_tagline_en', 'Digital News & Content Publishing Platform') }}</title>
+  
+  <meta name="description" content="{% block meta_desc %}{{ settings.get('site_about_ta' if current_lang == 'ta' else 'site_about_en', 'Tamil digital news, Keezhadi archaeological history, Tamil Nadu politics, India, World, Cinema, Jobs and video journalism.') }}{% endblock %}">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+  
+  <!-- FontAwesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  
+  {% block extra_css %}{% endblock %}
+</head>
+<body class="{% if current_lang == 'ta' %}tamil-text{% endif %}">
+
+  <!-- Interactive Scroll Progress Bar at very top of screen -->
+  <div id="scroll-progress-indicator" class="scroll-progress-bar"></div>
+
+  <!-- ======================================================================
+       1. TOP BAR (Date, Clock, Language, Dark Mode, Bookmarks, Admin)
+       ====================================================================== -->
+  <header class="top-bar">
+    <div class="container">
+      <div class="top-bar-left">
+        <div class="top-bar-date">
+          <i class="far fa-calendar-alt"></i>
+          <span>
+            {% if current_lang == 'ta' %}
+              {{ now.day }} {% if now.month == 1 %}ஜனவரி{% elif now.month == 2 %}பிப்ரவரி{% elif now.month == 3 %}மார்ச்{% elif now.month == 4 %}ஏப்ரல்{% elif now.month == 5 %}மே{% elif now.month == 6 %}ஜூன்{% elif now.month == 7 %}ஜூலை{% elif now.month == 8 %}ஆகஸ்ட்{% elif now.month == 9 %}செப்டம்பர்{% elif now.month == 10 %}அக்டோபர்{% elif now.month == 11 %}நவம்பர்{% else %}டிசம்பர்{% endif %}, {{ now.year }}
+            {% else %}
+              {{ now.strftime('%A, %B %d, %Y') }}
+            {% endif %}
+          </span>
+          <span style="opacity: 0.4; margin: 0 4px;">|</span>
+          <i class="far fa-clock"></i>
+          <span id="live-clock">--:--:-- --</span>
+        </div>
+        <div class="top-bar-tagline">
+          {{ settings.get('site_tagline_ta' if current_lang == 'ta' else 'site_tagline_en', 'உண்மை, மரபு மற்றும் முன்னேற்றத்தின் குரல்') }}
+        </div>
+      </div>
+
+      <div class="top-bar-right">
+        <!-- Language Switcher Pill -->
+        <div class="lang-switch">
+          <a href="{{ url_for('public.set_language', lang='ta') }}" class="lang-pill {% if current_lang == 'ta' %}active{% endif %}">தமிழ்</a>
+          <a href="{{ url_for('public.set_language', lang='en') }}" class="lang-pill {% if current_lang == 'en' %}active{% endif %}">English</a>
+        </div>
+
+        <!-- Bookmarks Link -->
+        <a href="{{ url_for('public.bookmarks') }}" class="top-btn" title="Saved Bookmarks">
+          <i class="fas fa-bookmark"></i>
+          <span>{% if current_lang == 'ta' %}பிடித்தவை{% else %}Saved{% endif %}</span>
+          <span class="badge-counter" id="bookmark-counter-badge">{{ bookmark_count }}</span>
+        </a>
+
+        <!-- Dark / Light Theme Toggle -->
+        <button type="button" class="top-btn theme-toggle-btn" title="Toggle Light / Dark Mode">
+          <i class="fas fa-moon"></i>
+        </button>
+
+        <!-- Admin Portal Dashboard Login Link -->
+        <a href="{{ url_for('auth.login') }}" class="top-btn" title="Dashboard Login">
+          <i class="fas fa-user-shield"></i>
+          <span>Dashboard</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ======================================================================
+       2. MAIN HEADER (Logo, Brand Title, Search, Mobile Hamburger)
+       ====================================================================== -->
+  <div class="main-header">
+    <div class="container">
+      <div class="header-inner">
+        <!-- Brand Logo with User's Uploaded Winged Pen Emblem -->
+        <a href="{{ url_for('public.index') }}" class="logo-wrapper">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Vithaigal Iyakkam Logo" class="logo-img">
+          <div class="logo-brand-details">
+            {% if current_lang == 'ta' %}
+              <span class="logo-brand-name">விதைகள் இயக்கம்</span>
+              <span class="logo-brand-sub">VITHAIKAL IYAKKAM</span>
+            {% else %}
+              <span class="logo-brand-name">VITHAIKAL IYAKKAM</span>
+              <span class="logo-brand-sub">TAMIL DIGITAL NEWS &amp; MEDIA</span>
+            {% endif %}
+          </div>
+        </a>
+
+        <!-- Search Bar with Live Suggestions Dropdown -->
+        <div class="search-container">
+          <form action="{{ url_for('public.search') }}" method="GET" class="search-input-group">
+            <input type="text" name="q" id="header-search-input" placeholder="{% if current_lang == 'ta' %}செய்திகள், கட்டுரைகள் தேடுக...{% else %}Search news, topics, keywords...{% endif %}" autocomplete="off" value="{{ request.args.get('q', '') }}">
+            <button type="submit" class="search-submit-btn" title="Search">
+              <i class="fas fa-search"></i>
+            </button>
+          </form>
+          <div class="search-results-dropdown" id="search-dropdown"></div>
+        </div>
+
+        <!-- Mobile Navigation Toggle -->
+        <div class="header-actions">
+          <button type="button" class="mobile-nav-toggle" aria-label="Open Navigation Menu">
+            <i class="fas fa-bars"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       3. NAVIGATION BAR (Home, History, Tamil Nadu, India, World, Cinema, Jobs, YouTube)
+       ====================================================================== -->
+  <nav class="main-nav">
+    <div class="container">
+      <ul class="nav-list">
+        <li class="nav-item">
+          <a href="{{ url_for('public.index') }}" class="nav-link {% if request.endpoint == 'public.index' %}active{% endif %}">
+            <i class="fas fa-home"></i>
+            <span>{% if current_lang == 'ta' %}முகப்பு{% else %}Home{% endif %}</span>
+          </a>
+        </li>
+        {% for cat in nav_categories %}
+        <li class="nav-item">
+          <a href="{{ url_for('public.category', slug=cat.slug) }}" class="nav-link {% if request.view_args and request.view_args.get('slug') == cat.slug %}active{% endif %} {% if cat.slug == 'youtube' %}special-yt{% endif %}">
+            <i class="fas fa-{{ cat.icon or 'newspaper' }}"></i>
+            <span>{{ cat.name_ta if current_lang == 'ta' else cat.name_en }}</span>
+          </a>
+        </li>
+        {% endfor %}
+        <li class="nav-item">
+          <a href="{{ url_for('public.contact') }}" class="nav-link {% if request.endpoint == 'public.contact' %}active{% endif %}">
+            <i class="fas fa-envelope"></i>
+            <span>{% if current_lang == 'ta' %}தொடர்புக்கு{% else %}Contact{% endif %}</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ======================================================================
+       4. POLIMER NEWS STYLE LIVE TV BREAKING NEWS BROADCAST (Home Screen Only)
+       ====================================================================== -->
+  {% if request.endpoint == 'public.index' and global_breaking_news %}
+  <section class="polimer-breaking-section" aria-label="Live Breaking Broadcast">
+    <div class="container">
+      <div class="polimer-broadcast-card">
+
+        <!-- Broadcast Carousel Container -->
+        <div class="polimer-slider-viewport" id="polimer-slider-viewport">
+          <div class="polimer-slider-track" id="polimer-slider-track">
+            {% for item in global_breaking_news %}
+            <div class="polimer-slide-item {% if loop.first %}active{% endif %}" data-slide-index="{{ loop.index0 }}">
+              
+              <!-- Left: 16:9 TV Studio Broadcast Screen (Interactive & Clickable) -->
+              <div class="polimer-tv-screen" onclick="window.location.href='{{ item.link_url or '#' }}'" style="cursor: pointer;" title="{% if current_lang == 'ta' %}செய்தியைப் படிக்க கிளிக் செய்யவும்{% else %}Click to view full story{% endif %}">
+                <!-- Top Themed Breaking Banner Bar -->
+                <div class="polimer-tv-top-bar">
+                  <div class="polimer-clock-capsule">
+                    <span class="capsule-date">{{ item.formatted_date if current_lang != 'ta' else item.formatted_date_ta }}</span>
+                    <span class="capsule-divider">|</span>
+                    <span class="capsule-time"><span class="polimer-live-clock">8:00 PM</span> <small>NEWS</small></span>
+                  </div>
+                  <div class="polimer-breaking-banner-text">
+                    <span class="banner-pulse-dot"></span>
+                    <span>{% if current_lang == 'ta' %}முக்கியச் செய்தி{% else %}BREAKING NEWS{% endif %}</span>
+                  </div>
+                </div>
+
+                <!-- Main TV Split Graphic Content -->
+                <div class="polimer-tv-graphic-split">
+                  <!-- Left: Visual Footage -->
+                  <div class="polimer-tv-footage">
+                    <img src="{{ item.display_image }}" alt="{{ item.title_ta if current_lang == 'ta' else item.title }}" loading="lazy" onerror="this.src='/static/images/logo.png'">
+                  </div>
+
+                  <!-- Right: High-Impact Tamil Quote Graphic Card -->
+                  <div class="polimer-tv-quote-box">
+                    <div class="quote-mark-top">“</div>
+                    <div class="quote-headline-text">
+                      {{ item.title_ta if current_lang == 'ta' else item.title }}
+                    </div>
+                    <div class="quote-mark-bottom">”</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right: Editorial Meta Details Column -->
+              <div class="polimer-details-column">
+                <div class="polimer-meta-headline-row">
+                  <h3 class="polimer-live-title">
+                    <a href="{{ item.link_url or '#' }}" title="{{ item.title_ta if current_lang == 'ta' else item.title }}">
+                      {{ item.title_ta if current_lang == 'ta' else item.title }}
+                    </a>
+                  </h3>
+                </div>
+
+                <!-- Channel Identity with Verified Badge -->
+                <div class="polimer-channel-row">
+                  <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="polimer-channel-avatar">
+                  <div class="polimer-channel-info">
+                    <span class="polimer-channel-name">
+                      {% if current_lang == 'ta' %}விதைகள் இயக்கம்{% else %}Vithaigal Iyakkam{% endif %}
+                      <i class="fas fa-check-circle verified-check" title="Verified Channel"></i>
+                    </span>
+                    <span class="channel-handle">@VithaigalIyakkam • 13.6k {% if current_lang == 'ta' %}வாசகர்கள்{% else %}subscribers{% endif %}</span>
+                  </div>
+                </div>
+
+                <!-- Category Badge Row -->
+                <div class="polimer-badges-row">
+                  {% set cat_name = item.linked_article.category.name_ta if (item.linked_article and item.linked_article.category and current_lang == 'ta') else (item.linked_article.category.name_en if (item.linked_article and item.linked_article.category) else ('முக்கியம்' if current_lang == 'ta' else 'Breaking')) %}
+                  <span class="badge-category-stream">{{ cat_name }}</span>
+                </div>
+
+                <!-- Excerpt / Context snippet -->
+                {% set excerpt = (item.linked_article.summary_ta if current_lang == 'ta' else item.linked_article.summary) if item.linked_article else '' %}
+                {% if excerpt %}
+                <p class="polimer-stream-desc">
+                  {{ excerpt }}
+                </p>
+                {% endif %}
+
+                <!-- Action Row: Interactive Share & Bookmark -->
+                <div class="polimer-actions-row">
+                  <button type="button" class="polimer-icon-btn share-breaking-btn" data-url="{{ item.link_url or '#' }}" data-title="{{ item.title_ta if current_lang == 'ta' else item.title }}" title="Share Breaking News">
+                    <i class="fas fa-share-alt"></i>
+                  </button>
+
+                  {% if item.linked_article %}
+                  <button type="button" class="bookmark-action-btn polimer-icon-btn" data-article-id="{{ item.linked_article.id }}" title="Bookmark">
+                    <i class="far fa-bookmark"></i>
+                  </button>
+                  {% endif %}
+                </div>
+
+              </div>
+
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Slider Bottom Bar: Progress Dots & Slide Nav Chevrons -->
+        <div class="polimer-slider-footer">
+          <div class="polimer-slide-dots" id="polimer-slide-dots">
+            {% for item in global_breaking_news %}
+            <button type="button" class="polimer-dot-btn {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}" aria-label="Slide {{ loop.index }}"></button>
+            {% endfor %}
+          </div>
+
+          <div class="polimer-nav-arrows">
+            <button type="button" class="polimer-arrow-btn" id="polimer-slide-prev" title="Previous Breaking Alert">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <span class="polimer-counter" id="polimer-counter">1 / {{ global_breaking_news|length }}</span>
+            <button type="button" class="polimer-arrow-btn" id="polimer-slide-next" title="Next Breaking Alert">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Flash Messages -->
+  <div class="container" style="margin-top: 18px;">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert-box alert-{{ category }}">
+            <span>{{ message }}</span>
+            <button type="button" onclick="this.parentElement.remove()" style="background: transparent; cursor: pointer; color: inherit;">&times;</button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <!-- ======================================================================
+       5. MAIN PAGE CONTENT
+       ====================================================================== -->
+  <main class="site-main">
+    <div class="container">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <!-- ======================================================================
+       6. COMPREHENSIVE FOOTER
+       ====================================================================== -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <!-- About Column -->
+        <div class="footer-col footer-about">
+          <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 12px;">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Vithaigal Iyakkam" style="height: 54px; border-radius: 50%; background: #ffffff; padding: 2px;">
+            <div>
+              <strong style="color: #ffffff; font-size: 16px; display: block;">
+                {% if current_lang == 'ta' %}விதைகள் இயக்கம்{% else %}VITHAIKAL IYAKKAM{% endif %}
+              </strong>
+              <small style="color: var(--accent-orange); font-size: 11px; letter-spacing: 1px;">
+                {% if current_lang == 'ta' %}VITHAIKAL IYAKKAM{% else %}DIGITAL NEWS PLATFORM{% endif %}
+              </small>
+            </div>
+          </div>
+          <p>
+            {{ settings.get('site_about_ta' if current_lang == 'ta' else 'site_about_en', 'விதைகள் இயக்கம் என்பது தமிழ் வரலாற்றுத் தொன்மை, நடுநிலையான இதழியல் மற்றும் சமூக விழிப்புணர்வை மக்களிடம் கொண்டு சேர்க்கும் டிஜிட்டல் செய்தித் தளம்.') }}
+          </p>
+          <div class="social-icons-row">
+            {% if settings.get('social_facebook') %}<a href="{{ settings.get('social_facebook') }}" target="_blank" class="social-icon-circle" title="Facebook"><i class="fab fa-facebook-f"></i></a>{% endif %}
+            {% if settings.get('social_twitter') %}<a href="{{ settings.get('social_twitter') }}" target="_blank" class="social-icon-circle" title="Twitter / X"><i class="fab fa-x-twitter"></i></a>{% endif %}
+            {% if settings.get('social_youtube') %}<a href="{{ settings.get('social_youtube') }}" target="_blank" class="social-icon-circle" title="YouTube"><i class="fab fa-youtube"></i></a>{% endif %}
+            {% if settings.get('social_instagram') %}<a href="{{ settings.get('social_instagram') }}" target="_blank" class="social-icon-circle" title="Instagram"><i class="fab fa-instagram"></i></a>{% endif %}
+            {% if settings.get('social_whatsapp') %}<a href="{{ settings.get('social_whatsapp') }}" target="_blank" class="social-icon-circle" title="WhatsApp Channel"><i class="fab fa-whatsapp"></i></a>{% endif %}
+          </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="footer-col">
+          <h4>{% if current_lang == 'ta' %}முக்கிய இணைப்புகள்{% else %}Quick Links{% endif %}</h4>
+          <div class="footer-links">
+            <a href="{{ url_for('public.index') }}"><i class="fas fa-chevron-right" style="font-size: 10px;"></i> {% if current_lang == 'ta' %}முகப்பு{% else %}Home{% endif %}</a>
+            <a href="{{ url_for('public.search') }}"><i class="fas fa-chevron-right" style="font-size: 10px;"></i> {% if current_lang == 'ta' %}செய்தித் தேடல்{% else %}Search News{% endif %}</a>
+            <a href="{{ url_for('public.bookmarks') }}"><i class="fas fa-chevron-right" style="font-size: 10px;"></i> {% if current_lang == 'ta' %}பிடித்த கட்டுரைகள்{% else %}Saved Bookmarks{% endif %}</a>
+            <a href="{{ url_for('public.contact') }}"><i class="fas fa-chevron-right" style="font-size: 10px;"></i> {% if current_lang == 'ta' %}தொடர்புக்கு{% else %}Contact Us{% endif %}</a>
+            <a href="{{ url_for('auth.login') }}"><i class="fas fa-chevron-right" style="font-size: 10px;"></i> {% if current_lang == 'ta' %}நிர்வாகப் பகுதி{% else %}Admin Portal{% endif %}</a>
+          </div>
+        </div>
+
+        <!-- Categories Column -->
+        <div class="footer-col">
+          <h4>{% if current_lang == 'ta' %}பிரிவுகள்{% else %}Categories{% endif %}</h4>
+          <div class="footer-links">
+            {% for cat in nav_categories %}
+            <a href="{{ url_for('public.category', slug=cat.slug) }}">
+              <i class="fas fa-chevron-right" style="font-size: 10px;"></i>
+              {{ cat.name_ta if current_lang == 'ta' else cat.name_en }}
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Contact & Newsletter -->
+        <div class="footer-col">
+          <h4>{% if current_lang == 'ta' %}செய்தி மடல் & முகவரி{% else %}Newsletter & Office{% endif %}</h4>
+          <p style="font-size: 13px; color: #cbd5e1; margin-bottom: 12px;">
+            <i class="fas fa-map-marker-alt" style="color: var(--accent-orange); margin-right: 6px;"></i>
+            {{ settings.get('site_address_ta' if current_lang == 'ta' else 'site_address_en', 'சென்னை, தமிழ்நாடு - 600006') }}
+          </p>
+          <p style="font-size: 13px; color: #cbd5e1; margin-bottom: 16px;">
+            <i class="fas fa-envelope" style="color: var(--accent-orange); margin-right: 6px;"></i>
+            {{ settings.get('site_email', 'contact@vithaigaliyakkam.org') }}
+          </p>
+
+          <!-- Footer Compact Newsletter -->
+          <form action="{{ url_for('public.subscribe') }}" method="POST" class="ajax-newsletter-form" style="display: flex; gap: 6px;">
+            <input type="email" name="email" placeholder="{% if current_lang == 'ta' %}மின்னஞ்சல் முகவரி{% else %}Your Email{% endif %}" required style="flex: 1; padding: 8px 12px; font-size: 12px; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+            <button type="submit" style="background: var(--accent-orange); color: #fff; padding: 8px 12px; font-size: 12px; font-weight: 600; border-radius: 4px; cursor: pointer;">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>
+          &copy; {{ now.year }} <strong>{{ settings.get('site_name_ta', 'விதைகள் இயக்கம்') if current_lang == 'ta' else settings.get('site_name_en', 'Vithaigal Iyakkam') }}</strong>. {% if current_lang == 'ta' %}அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.{% else %}All Rights Reserved.{% endif %}
+        </div>
+        <div style="display: flex; gap: 16px;">
+          <a href="{{ url_for('public.contact') }}" style="color: #94a3b8;">Privacy Policy</a>
+          <a href="{{ url_for('public.contact') }}" style="color: #94a3b8;">Terms of Service</a>
+          <a href="{{ url_for('auth.login') }}" style="color: #94a3b8;"><i class="fas fa-lock"></i> Staff Login</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ======================================================================
+       7. MOBILE SLIDE-OUT DRAWER MENU
+       ====================================================================== -->
+  <div class="mobile-drawer-overlay">
+    <div class="mobile-drawer">
+      <div class="drawer-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" style="height: 42px; border-radius: 50%;">
+          <strong style="font-size: 15px; color: var(--text-primary);">
+            {% if current_lang == 'ta' %}விதைகள் இயக்கம்{% else %}VITHAIKAL IYAKKAM{% endif %}
+          </strong>
+        </div>
+        <button type="button" class="drawer-close-btn">&times;</button>
+      </div>
+      <div class="drawer-body">
+        <!-- Mobile Search Form -->
+        <form action="{{ url_for('public.search') }}" method="GET" style="margin-bottom: 20px;">
+          <div style="display: flex; gap: 4px;">
+            <input type="text" name="q" placeholder="{% if current_lang == 'ta' %}தேடுக...{% else %}Search news...{% endif %}" style="flex: 1; padding: 8px 12px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--bg-secondary); color: var(--text-primary); font-size: 13px;">
+            <button type="submit" style="background: var(--accent-orange); color: #fff; padding: 8px 12px; border-radius: var(--radius-sm); cursor: pointer;"><i class="fas fa-search"></i></button>
+          </div>
+        </form>
+
+        <div class="drawer-links">
+          <a href="{{ url_for('public.index') }}" class="{% if request.endpoint == 'public.index' %}active{% endif %}">
+            <i class="fas fa-home"></i> {% if current_lang == 'ta' %}முகப்பு{% else %}Home{% endif %}
+          </a>
+          {% for cat in nav_categories %}
+          <a href="{{ url_for('public.category', slug=cat.slug) }}" class="{% if request.view_args and request.view_args.get('slug') == cat.slug %}active{% endif %}">
+            <i class="fas fa-{{ cat.icon or 'newspaper' }}"></i>
+            {{ cat.name_ta if current_lang == 'ta' else cat.name_en }}
+          </a>
+          {% endfor %}
+          <a href="{{ url_for('public.bookmarks') }}">
+            <i class="fas fa-bookmark"></i> {% if current_lang == 'ta' %}பிடித்தவை{% else %}Saved Bookmarks{% endif %}
+          </a>
+          <a href="{{ url_for('public.contact') }}">
+            <i class="fas fa-envelope"></i> {% if current_lang == 'ta' %}தொடர்புக்கு{% else %}Contact{% endif %}
+          </a>
+          <a href="{{ url_for('auth.login') }}">
+            <i class="fas fa-user-shield"></i> {% if current_lang == 'ta' %}நிர்வாகி உள்நுழைவு{% else %}Admin Login{% endif %}
+          </a>
+        </div>
+
+        <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
+          <div class="lang-switch">
+            <a href="{{ url_for('public.set_language', lang='ta') }}" class="lang-pill {% if current_lang == 'ta' %}active{% endif %}">தமிழ்</a>
+            <a href="{{ url_for('public.set_language', lang='en') }}" class="lang-pill {% if current_lang == 'en' %}active{% endif %}">English</a>
+          </div>
+          <button type="button" class="top-btn theme-toggle-btn" style="color: var(--text-primary);">
+            <i class="fas fa-moon"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container"></div>
+
+  <!-- Floating Back to Top Button (Interactive) -->
+  <button type="button" id="back-to-top-btn" class="back-to-top-btn" title="Back to top" aria-label="Back to top">
+    <i class="fas fa-arrow-up"></i>
+  </button>
+
+  <!-- Interactive Image Lightbox Modal -->
+  <div class="image-lightbox-modal" id="image-lightbox-modal">
+    <span class="lightbox-close-btn" id="lightbox-close-btn">&times;</span>
+    <div class="lightbox-content-box">
+      <img src="" alt="" class="lightbox-img" id="lightbox-img">
+      <div class="lightbox-caption" id="lightbox-caption"></div>
+    </div>
+  </div>
+
+  <!-- Interactive Video Cinema Lightbox Modal -->
+  <div class="image-lightbox-modal" id="video-lightbox-modal">
+    <span class="lightbox-close-btn" id="video-lightbox-close-btn">&times;</span>
+    <div class="video-lightbox-box">
+      <div class="video-embed-container" style="margin: 0; box-shadow: none;">
+        <iframe id="video-lightbox-iframe" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen title="Video player"></iframe>
+      </div>
+      <div class="video-lightbox-info" style="padding: 14px 18px; background: var(--navy-900); border-top: 1px solid rgba(255,255,255,0.1); border-radius: 0 0 var(--radius-md) var(--radius-md);">
+        <h4 id="video-lightbox-title" style="margin: 0; color: #ffffff; font-size: 15px; font-weight: 700; line-height: 1.4;"></h4>
+        <a id="video-lightbox-link" href="#" class="admin-btn admin-btn-secondary admin-btn-sm" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none; font-size: 12px; margin-top: 10px; background: rgba(255, 87, 34, 0.15); color: var(--accent-orange); border: 1px solid rgba(255, 87, 34, 0.3);">
+          <span>{% if current_lang == 'ta' %}முழு செய்தியை வாசிக்க{% else %}Read Full Article{% endif %}</span> <i class="fas fa-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main JavaScript File -->
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>
