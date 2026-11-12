@@ -57,7 +57,7 @@
         <!-- Bookmarks Link -->
         <a href="{{ url_for('public.bookmarks') }}" class="top-btn" title="Saved Bookmarks">
           <i class="fas fa-bookmark"></i>
-          <span>{% if current_lang == 'ta' %}பிடித்தவை{% else %}Saved{% endif %}</span>
+          <span class="top-btn-label">{% if current_lang == 'ta' %}பிடித்தவை{% else %}Saved{% endif %}</span>
           <span class="badge-counter" id="bookmark-counter-badge">{{ bookmark_count }}</span>
         </a>
 
@@ -69,7 +69,7 @@
         <!-- Admin Portal Dashboard Login Link -->
         <a href="{{ url_for('auth.login') }}" class="top-btn" title="Dashboard Login">
           <i class="fas fa-user-shield"></i>
-          <span>Dashboard</span>
+          <span class="top-btn-label">Dashboard</span>
         </a>
       </div>
     </div>

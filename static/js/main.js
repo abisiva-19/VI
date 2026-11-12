@@ -80,17 +80,48 @@ function initThemeToggle() {
 function initMobileDrawer() {
   const toggleBtn = document.querySelector('.mobile-nav-toggle');
   const overlay = document.querySelector('.mobile-drawer-overlay');
+  const drawer = document.querySelector('.mobile-drawer');
   const closeBtn = document.querySelector('.drawer-close-btn');
 
   if (!toggleBtn || !overlay) return;
 
-  toggleBtn.addEventListener('click', () => overlay.classList.add('active'));
-  if (closeBtn) {
-    closeBtn.addEventListener('click', () => overlay.classList.remove('active'));
+  function openDrawer() {
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
   }
+
+  function closeDrawer() {
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  toggleBtn.addEventListener('click', openDrawer);
+  if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
   overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) overlay.classList.remove('active');
+    if (e.target === overlay) closeDrawer();
   });
+
+  // ESC key to close drawer
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && overlay.classList.contains('active')) {
+      closeDrawer();
+    }
+  });
+
+  // Touch swipe left to close drawer
+  let touchStartX = 0;
+  if (drawer) {
+    drawer.addEventListener('touchstart', (e) => {
+      touchStartX = e.touches[0].clientX;
+    }, { passive: true });
+
+    drawer.addEventListener('touchend', (e) => {
+      const diffX = touchStartX - e.changedTouches[0].clientX;
+      if (diffX > 60) {
+        closeDrawer();
+      }
+    }, { passive: true });
+  }
 }
 
 /* ==========================================================================
@@ -344,19 +375,35 @@ function initArticleToolbar() {
         ttsIcon.className = 'fas fa-volume-up';
         ttsText.textContent = document.documentElement.lang === 'ta' ? 'செய்தியைக் கேளுங்கள்' : 'Listen to Story';
       } else {
-        const title = document.querySelector('.article-main-title')?.textContent || '';
-        const summary = document.querySelector('.article-content-body .lead')?.textContent || '';
-        const textToRead = `${title}. ${summary}`;
+        const title = document.querySelector('.article-main-title')?.textContent?.trim() || '';
+        const summary = document.querySelector('.article-content-body .lead')?.textContent?.trim() || '';
+        const firstP = document.querySelector('.article-content-body .rich-text-content p')?.textContent?.trim() || '';
+        const textToRead = summary ? `${title}. ${summary}` : (firstP ? `${title}. ${firstP}` : title);
 
         utterance = new SpeechSynthesisUtterance(textToRead);
         utterance.rate = 0.95;
-        utterance.lang = document.documentElement.lang === 'ta' ? 'ta-IN' : 'en-US';
+        const langCode = document.documentElement.lang === 'ta' ? 'ta-IN' : 'en-US';
+        utterance.lang = langCode;
+
+        // Try voice matching for native Tamil or English voices
+        const voices = window.speechSynthesis.getVoices();
+        const matchedVoice = voices.find(v => v.lang && v.lang.toLowerCase().startsWith(langCode.slice(0, 2).toLowerCase()));
+        if (matchedVoice) {
+          utterance.voice = matchedVoice;
+        }
 
         utterance.onend = () => {
           isSpeaking = false;
           ttsBtn.classList.remove('playing');
           ttsIcon.className = 'fas fa-volume-up';
           ttsText.textContent = document.documentElement.lang === 'ta' ? 'மீண்டும் கேளுங்கள்' : 'Listen Again';
+        };
+
+        utterance.onerror = () => {
+          isSpeaking = false;
+          ttsBtn.classList.remove('playing');
+          ttsIcon.className = 'fas fa-volume-up';
+          ttsText.textContent = document.documentElement.lang === 'ta' ? 'செய்தியைக் கேளுங்கள்' : 'Listen to Story';
         };
 
         window.speechSynthesis.speak(utterance);
@@ -368,7 +415,7 @@ function initArticleToolbar() {
     });
   }
 
-  // B. Font Size Adjuster
+  // B. Font Size Adjuster with Local Storage Persistence
   const articleBody = document.querySelector('.article-content-body');
   const fontBtns = document.querySelectorAll('.font-btn');
 
@@ -379,12 +426,19 @@ function initArticleToolbar() {
       'font-increase': '20px'
     };
 
+    const savedFontKey = localStorage.getItem('vi_article_font_key') || 'font-normal';
+    if (fontSizes[savedFontKey]) {
+      articleBody.style.fontSize = fontSizes[savedFontKey];
+      fontBtns.forEach(b => b.classList.toggle('active', b.id === savedFontKey));
+    }
+
     fontBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         fontBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const targetSize = fontSizes[btn.id] || '17px';
         articleBody.style.fontSize = targetSize;
+        localStorage.setItem('vi_article_font_key', btn.id);
       });
     });
   }
@@ -443,9 +497,10 @@ function initImageLightbox() {
 
   if (!modal || !modalImg) return;
 
-  const triggers = document.querySelectorAll('.lightbox-trigger img');
+  const triggers = document.querySelectorAll('.lightbox-trigger img, .rich-text-content img');
 
   triggers.forEach(img => {
+    img.style.cursor = 'zoom-in';
     img.addEventListener('click', () => {
       modalImg.src = img.src;
       if (captionEl) {
@@ -639,17 +694,40 @@ function initCopyLinkButtons() {
   const copyBtn = document.getElementById('copy-article-link-btn');
   if (!copyBtn) return;
 
+  function fallbackCopy(text, cb) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      if (cb) cb();
+    } catch (e) {
+      console.error('Fallback copy failed', e);
+    }
+    document.body.removeChild(ta);
+  }
+
   copyBtn.addEventListener('click', () => {
-    navigator.clipboard.writeText(window.location.href).then(() => {
+    const url = window.location.href;
+    const isTamil = document.documentElement.lang === 'ta';
+
+    function onCopied() {
       const originalHTML = copyBtn.innerHTML;
       copyBtn.innerHTML = '<i class="fas fa-check" style="color: #22c55e;"></i> Copied!';
-      showToast(document.documentElement.lang === 'ta' ? 'இணைப்பு நகலெடுக்கப்பட்டது! 📋' : 'Link copied to clipboard! 📋', 'success');
+      showToast(isTamil ? 'இணைப்பு நகலெடுக்கப்பட்டது! 📋' : 'Link copied to clipboard! 📋', 'success');
       setTimeout(() => {
         copyBtn.innerHTML = originalHTML;
       }, 2000);
-    }).catch(err => {
-      console.error('Copy link failed:', err);
-    });
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(onCopied).catch(() => fallbackCopy(url, onCopied));
+    } else {
+      fallbackCopy(url, onCopied);
+    }
   });
 }
 

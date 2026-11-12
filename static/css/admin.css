@@ -2055,4 +2055,40 @@ body.admin-login-body {
   .admin-user-pill {
     padding: 4px;
   }
+  .card-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-topbar {
+    padding: 0 12px;
+    height: 58px;
+  }
+  .admin-content {
+    padding: 16px 10px;
+  }
+  .stat-card {
+    padding: 16px;
+  }
+  .stat-number {
+    font-size: 22px;
+  }
+  .form-card {
+    padding: 18px 14px;
+  }
+  .table-header-toolbar {
+    padding: 14px 14px;
+  }
+  .table-pagination-footer {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+    padding: 14px;
+  }
+  .modal-dialog-box {
+    max-width: 94vw !important;
+    padding: 18px 14px !important;
+  }
 }
