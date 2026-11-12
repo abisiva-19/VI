@@ -15,8 +15,14 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
 
     # Ensure upload directory exists
-    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
-    os.makedirs(os.path.join(app.root_path, "instance"), exist_ok=True)
+    for folder in (
+        app.config["UPLOAD_FOLDER"],
+        os.path.join(app.root_path, "instance"),
+    ):
+        try:
+            os.makedirs(folder, exist_ok=True)
+        except OSError:
+            pass  # read-only filesystem (e.g. Vercel)
 
     # Initialize extensions
     db.init_app(app)
